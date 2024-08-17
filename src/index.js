@@ -32,13 +32,9 @@ async function handle(event) {
 		});
 
 		let response = await fetch(modifiedRequest);
-		const baseUrl = `${url.origin}/proxy/${actualOrigin}`;
-
+		const baseUrl = `${url.origin}/proxy/${actualOrigin}`; //前缀加上真实域名
 		if (response.headers.get('Content-Type')?.includes('text/html')) {
-			response = await updateRelativeUrls(
-				response,
-				baseUrl
-			);
+			response = await updateRelativeUrls(response, baseUrl, `${url.origin}/proxy/`);
 		}
 
 		const modifiedResponse = new Response(response.body, response);
@@ -56,16 +52,21 @@ async function handle(event) {
 	}
 }
 
-async function updateRelativeUrls(response, baseUrl) {
+async function updateRelativeUrls(response, baseUrl, prefix) {
 	let text = await response.text();
-	// 找到所有以 http 开头的绝对路径，并在每个链接前加上 baseUrl
-	text = text.replace(/http[s]?:\/\/[^"'\s]+/g, (match) => {
-		// 加上 baseUrl
-		return `${baseUrl}${match}`;
+	// 找到所有以 http 开头的绝对路径，并在每个链接前加上 prefix
+	// text = text.replace(/http[s]?:\/\/[^"'\s]+/g, (match) => {
+	// 	console.log(`${prefix}${match}"`);
+	// 	return `${prefix}${match}`;
+	// });
+	text = text.replace(/http[s]?:\/\/(?![^<]*<\/(?:link|script)>)[^"'\s]+/g, (match) => {
+		console.log(`${prefix}${match}`);
+		return `${prefix}${match}`;
 	});
-	// 替换HTML中的相对路径, 不能替换action，会报错请enable cookie
+	// 替换HTML中的相对路径, 不能替换action，会报错: 请enable cookie
 	text = text.replace(/(href|src|action)="([^"]*?)"/g, (match, p1, p2) => {
 		if (!p2.includes('://') && !p2.startsWith('#')) {
+			console.log(`${p1}="${baseUrl}${p2}"`);
 			return `${p1}="${baseUrl}${p2}"`;
 		}
 		return match;

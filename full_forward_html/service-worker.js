@@ -20,10 +20,10 @@ self.addEventListener('fetch', (event) => {
 	}
 	// 如果请求路径不以 '/proxy/' 开头，需要从cookie获得域名
 	if (!requestUrl.pathname.startsWith('/proxy/')) {
-		console.log('Request does not start with /proxy/. Checking cookies..., requestUrl.origin:', requestUrl.origin);
 
 		// 从请求头中获取 Cookie
 		const cookie = event.request.headers.get('Cookie');
+		console.log('Request does not start with /proxy/. Checking cookies..., requestUrl.origin:', requestUrl.origin, 'cookie:',cookie);
 
 		if (cookie) {
 			// 解析 Cookie 为对象
@@ -98,7 +98,7 @@ self.addEventListener('fetch', (event) => {
 		// event.respondWith(fetch(modifiedRequest));
 		return;
 	} else {
-		console.log('Passing through unmodified request. 未更改，requestUrl：', requestUrl);
+		console.log('Passing through unmodified request. 未更改，requestUrl.href：', requestUrl.href);
 		event.respondWith(fetch(event.request));
 	}
 });
