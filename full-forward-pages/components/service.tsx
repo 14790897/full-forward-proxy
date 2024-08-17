@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import { useEffect } from 'react';
 
 export default function Service() {
@@ -14,5 +14,5 @@ export default function Service() {
 				});
 		}
 	}, []);
-	return <main className="flex min-h-screen flex-col items-center justify-between p-24">service 已加载</main>;
+	return null;
 }
