@@ -81,7 +81,12 @@ self.addEventListener('fetch', (event) => {
 		}
 
 		const modifiedUrl = prefix + requestUrl.href;
-		console.log('URL does not start with prefix. Adding prefix and redirecting...,modifiedUrl:', modifiedUrl);
+		console.log(
+			'URL does not start with prefix. Adding prefix and redirecting...,modifiedUrl:',
+			modifiedUrl,
+			'originRequestUrl:',
+			requestUrl.href
+		);
 		const modifiedRequestInit = {
 			method: event.request.method,
 			headers: event.request.headers,
