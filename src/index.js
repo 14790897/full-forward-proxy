@@ -37,7 +37,7 @@ async function handle(event) {
 		if (response.headers.get('Content-Type')?.includes('text/html')) {
 			response = await updateRelativeUrls(
 				response,
-				baseUrl // 重新请求
+				baseUrl
 			);
 		}
 
@@ -58,6 +58,11 @@ async function handle(event) {
 
 async function updateRelativeUrls(response, baseUrl) {
 	let text = await response.text();
+	// 找到所有以 http 开头的绝对路径，并在每个链接前加上 baseUrl
+	text = text.replace(/http[s]?:\/\/[^"'\s]+/g, (match) => {
+		// 加上 baseUrl
+		return `${baseUrl}${match}`;
+	});
 	// 替换HTML中的相对路径, 不能替换action，会报错请enable cookie
 	text = text.replace(/(href|src|action)="([^"]*?)"/g, (match, p1, p2) => {
 		if (!p2.includes('://') && !p2.startsWith('#')) {
@@ -65,7 +70,7 @@ async function updateRelativeUrls(response, baseUrl) {
 		}
 		return match;
 	});
-	// 在 </body> 之前注入 JavaScript 代码
+	// 在 </body> 之前注入 JavaScript 替换链接代码
 	const scriptToInject = `
   <script>
     (function() {

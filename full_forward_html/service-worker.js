@@ -12,15 +12,15 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
 	const requestUrl = new URL(event.request.url); // 请求的域名
 	const originUrl = new URL(self.location.href); //当前所在的网站的域名的url对象
-	const domain = self.location.origin; //当前所在的网站的域名
+	const domain = originUrl.origin; //当前所在的网站的域名
 	const prefix = `${domain}/proxy/`;
-	console.log('prefix:', prefix, 'url.pathname:', requestUrl.pathname);
+	// console.log('prefix:', prefix, 'requestUrl:', requestUrl.url);
 	if (requestUrl.pathname === '/' || requestUrl.pathname === '/service-worker.js') {
 		event.respondWith(fetch(event.request)); // 直接传递给worker
 	}
 	// 如果请求路径不以 '/proxy/' 开头，需要从cookie获得域名
 	if (!requestUrl.pathname.startsWith('/proxy/')) {
-		console.log('Request does not start with /proxy/. Checking cookies...');
+		console.log('Request does not start with /proxy/. Checking cookies..., requestUrl.origin:', requestUrl.origin);
 
 		// 从请求头中获取 Cookie
 		const cookie = event.request.headers.get('Cookie');
@@ -33,7 +33,7 @@ self.addEventListener('fetch', (event) => {
 					return [key.trim(), val.join('=').trim()];
 				})
 			);
-
+			console.log('cookieObj.current_site:', cookieObj.current_site);
 			if (cookieObj.current_site) {
 				// 如果 current_site 存在，从中构造实际的 URL
 				const actualUrlStr = decodeURIComponent(cookieObj.current_site) + requestUrl.pathname + requestUrl.search + requestUrl.hash;
@@ -49,6 +49,7 @@ self.addEventListener('fetch', (event) => {
 				return;
 			} else {
 				// 如果 Cookie 中没有 current_site
+				console.log('No website in cookie, Please visit a website first');
 				event.respondWith(
 					new Response(
 						`No website in cookie, Please visit a website first, cookie: ${JSON.stringify(cookieObj)}, website: ${cookieObj.current_site}`,
@@ -61,15 +62,16 @@ self.addEventListener('fetch', (event) => {
 				return;
 			}
 		} else {
+			console.log('No cookie, Please visit a website first');
 			return new Response(`no cookie, Please visit a website first}`, {
 				status: 400,
 				headers: { 'Content-Type': 'text/plain' },
 			});
 		}
 	}
-	// 如果链接不以域名/proxy/开头，同时pathname以https开头，说明 则加上前缀，使得可以代理
-	else if (!originUrl.href.startsWith(prefix) && (originUrl.pathname.startsWith('https') || originUrl.pathname.startsWith('http'))) {
-		const modifiedUrl = prefix + originUrl.href;
+	// 如果请求的域名不以prefix开头，说明他请求了外部的服务那个服务是一个完整的链接，则加上前缀，使得可以代理
+	else if (!requestUrl.href.startsWith(prefix) ) {
+		const modifiedUrl = prefix + requestUrl.href;
 		console.log('URL does not start with prefix. Adding prefix and redirecting...,modifiedUrl:', modifiedUrl);
 		const modifiedRequestInit = {
 			method: event.request.method,
@@ -96,7 +98,7 @@ self.addEventListener('fetch', (event) => {
 		// event.respondWith(fetch(modifiedRequest));
 		return;
 	} else {
-		console.log('Passing through unmodified request. 未更改');
+		console.log('Passing through unmodified request. 未更改，requestUrl：', requestUrl);
 		event.respondWith(fetch(event.request));
 	}
 });
