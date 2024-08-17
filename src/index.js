@@ -5,9 +5,9 @@ addEventListener('fetch', (event) => {
 async function handleRequest(request) {
 	const url = new URL(request.url);
 	if (url.pathname === '/' || url.pathname === '/proxy/') {
-		return new Response('hello, world', {
-			headers: { 'Content-Type': 'text/plain' },
-		});
+		// 将请求代理到 Cloudflare Pages 部署的网站
+		const pagesUrl = 'https://pages.paperai.life'; // 将其替换为你的 Pages URL
+		return fetch(pagesUrl);
 	}
 	let actualUrlStr;
 	if (!url.pathname.startsWith('/proxy/')) {

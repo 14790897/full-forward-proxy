@@ -17,8 +17,8 @@ self.addEventListener('fetch', (event) => {
 
 	// 处理 fetch 请求
 	if (!url.href.startsWith(prefix)) {
-		const modifiedUrl = prefix + encodeURIComponent(url.href);
-		const modifiedRequest = new Request(modifiedUrl, {
+		// const modifiedUrl = prefix + encodeURIComponent(url.href);
+		const modifiedRequest = new Request(url.href, {
 			method: event.request.method,
 			headers: event.request.headers,
 			body: event.request.body,
@@ -31,7 +31,7 @@ self.addEventListener('fetch', (event) => {
 		});
 		event.respondWith(fetch(modifiedRequest));
 		return;
-	}
+	}else
 
 	event.respondWith(fetch(event.request));
 });
