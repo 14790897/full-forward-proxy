@@ -10,16 +10,16 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-	// const url = new URL(event.request.url);
-	const url = self.location.href;
-	const domain = self.location.origin;
+	const requestUrl = new URL(event.request.url); // 请求的域名
+	const originUrl = new URL(self.location.href); //当前所在的网站的域名的url对象
+	const domain = self.location.origin; //当前所在的网站的域名
 	const prefix = `${domain}/proxy/`;
-	console.log('prefix:', prefix);
-	if (url.pathname === '/' || url.pathname === '/service-worker.js') {
+	console.log('prefix:', prefix, 'url.pathname:', requestUrl.pathname);
+	if (requestUrl.pathname === '/' || requestUrl.pathname === '/service-worker.js') {
 		event.respondWith(fetch(event.request)); // 直接传递给worker
 	}
 	// 如果请求路径不以 '/proxy/' 开头，需要从cookie获得域名
-	if (!url.pathname.startsWith('/proxy/')) {
+	if (!requestUrl.pathname.startsWith('/proxy/')) {
 		console.log('Request does not start with /proxy/. Checking cookies...');
 
 		// 从请求头中获取 Cookie
@@ -36,12 +36,12 @@ self.addEventListener('fetch', (event) => {
 
 			if (cookieObj.current_site) {
 				// 如果 current_site 存在，从中构造实际的 URL
-				const actualUrlStr = decodeURIComponent(cookieObj.current_site) + url.pathname + url.search + url.hash;
+				const actualUrlStr = decodeURIComponent(cookieObj.current_site) + requestUrl.pathname + requestUrl.search + requestUrl.hash;
 				console.log('actualUrlStr in cookieObj:', actualUrlStr);
 				const actualUrl = new URL(actualUrlStr);
 
 				// 构造重定向 URL
-				const redirectUrl = `${url.origin}/proxy/${actualUrl.href}`;
+				const redirectUrl = `${prefix}${actualUrl.href}`;
 				console.log('Redirecting to in cookie:', redirectUrl);
 
 				// 响应重定向
@@ -67,9 +67,9 @@ self.addEventListener('fetch', (event) => {
 			});
 		}
 	}
-	// 如果是不以/proxy/开头，则加上前缀，使得可以代理
-	else if (!url.href.startsWith(prefix)) {
-		const modifiedUrl = prefix + url.href;
+	// 如果链接不以域名/proxy/开头，同时pathname以https开头，说明 则加上前缀，使得可以代理
+	else if (!originUrl.href.startsWith(prefix) && (originUrl.pathname.startsWith('https') || originUrl.pathname.startsWith('http'))) {
+		const modifiedUrl = prefix + originUrl.href;
 		console.log('URL does not start with prefix. Adding prefix and redirecting...,modifiedUrl:', modifiedUrl);
 		const modifiedRequestInit = {
 			method: event.request.method,
