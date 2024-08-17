@@ -1,4 +1,4 @@
-import Service from '@/components/service';
+import Service from '@/components/Service';
 import HomePage from '@/components/HomePage';
 export default function Home() {
 	return (
