@@ -10,8 +10,10 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-	const url = new URL(event.request.url);
-	const prefix = `${url}/proxy/`;
+	// const url = new URL(event.request.url);
+	const url = self.location.href;
+	const domain = self.location.origin;
+	const prefix = `${domain}/proxy/`;
 	console.log('prefix:', prefix);
 	if (url.pathname === '/' || url.pathname === '/service-worker.js') {
 		event.respondWith(fetch(event.request)); // 直接传递给worker
