@@ -18,10 +18,12 @@ self.addEventListener('fetch', (event) => {
 	}
 	// 如果请求路径不以 '/proxy/' 开头，需要从cookie获得域名
 	if (!url.pathname.startsWith('/proxy/')) {
+		console.log('Request does not start with /proxy/. Checking cookies...');
+
 		// 从请求头中获取 Cookie
 		const cookie = event.request.headers.get('Cookie');
 
-		if (cookie) {   
+		if (cookie) {
 			// 解析 Cookie 为对象
 			const cookieObj = Object.fromEntries(
 				cookie.split(';').map((cookie) => {
@@ -38,6 +40,7 @@ self.addEventListener('fetch', (event) => {
 
 				// 构造重定向 URL
 				const redirectUrl = `${url.origin}/proxy/${actualUrl.href}`;
+				console.log('Redirecting to in cookie:', redirectUrl);
 
 				// 响应重定向
 				event.respondWith(Response.redirect(redirectUrl, 301));
@@ -65,6 +68,7 @@ self.addEventListener('fetch', (event) => {
 	// 如果是不以/proxy/开头，则加上前缀，使得可以代理
 	else if (!url.href.startsWith(prefix)) {
 		const modifiedUrl = prefix + url.href;
+		console.log('URL does not start with prefix. Adding prefix and redirecting...,modifiedUrl:', modifiedUrl);
 		const modifiedRequestInit = {
 			method: event.request.method,
 			headers: event.request.headers,
@@ -82,10 +86,15 @@ self.addEventListener('fetch', (event) => {
 			modifiedRequestInit.duplex = 'half';
 		}
 
-		const modifiedRequest = new Request(modifiedUrl, modifiedRequestInit);
-		event.respondWith(fetch(modifiedRequest));
+		// 这里重定向到新的 URL
+		const redirectUrl = new URL(modifiedUrl);
+		const redirectResponse = Response.redirect(redirectUrl, 302);
+		// const modifiedRequest = new Request(modifiedUrl, modifiedRequestInit);
+		event.respondWith(redirectResponse);
+		// event.respondWith(fetch(modifiedRequest));
 		return;
 	} else {
+		console.log('Passing through unmodified request. 未更改');
 		event.respondWith(fetch(event.request));
 	}
 });
