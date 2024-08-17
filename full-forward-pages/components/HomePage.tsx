@@ -2,7 +2,7 @@
 import { useState } from 'react';
 
 export default function HomePage() {
-	const [url, setUrl] = useState('');
+	const [url, setUrl] = useState('https://github.com');
 
 	const handleSubmit = (event: any) => {
 		event.preventDefault();
