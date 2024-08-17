@@ -87,7 +87,7 @@ async function handleRequest(request) {
 				);
 			}
 		} else {
-			return new Response(`no cookie, Please visit a website first,cookie:${JSON.stringify(cookieObj)}`, {
+			return new Response(`no cookie, Please visit a website first}`, {
 				status: 400,
 				headers: { 'Content-Type': 'text/plain' },
 			});

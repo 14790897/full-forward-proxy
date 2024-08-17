@@ -13,7 +13,7 @@ self.addEventListener('fetch', (event) => {
 	const url = new URL(event.request.url);
 	const prefix = `${url}/proxy/`;
 	console.log('prefix:', prefix);
-	if (url.pathname === '/' || url.pathname === '/proxy/') {
+	if (url.pathname === '/' || url.pathname === '/service-worker.js') {
 		event.respondWith(fetch(event.request)); // 直接传递给worker
 	}
 	// 如果请求路径不以 '/proxy/' 开头，需要从cookie获得域名
@@ -21,7 +21,7 @@ self.addEventListener('fetch', (event) => {
 		// 从请求头中获取 Cookie
 		const cookie = event.request.headers.get('Cookie');
 
-		if (cookie) {
+		if (cookie) {   
 			// 解析 Cookie 为对象
 			const cookieObj = Object.fromEntries(
 				cookie.split(';').map((cookie) => {
@@ -56,13 +56,13 @@ self.addEventListener('fetch', (event) => {
 				return;
 			}
 		} else {
-			return new Response(`no cookie, Please visit a website first,cookie:${JSON.stringify(cookieObj)}`, {
+			return new Response(`no cookie, Please visit a website first}`, {
 				status: 400,
 				headers: { 'Content-Type': 'text/plain' },
 			});
 		}
 	}
-	// 如果是以/proxy/开头，则传给worker处理	
+	// 如果是不以/proxy/开头，则加上前缀，使得可以代理
 	else if (!url.href.startsWith(prefix)) {
 		const modifiedUrl = prefix + url.href;
 		const modifiedRequestInit = {

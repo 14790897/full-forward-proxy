@@ -9,7 +9,7 @@ async function handle(event) {
 		const request = event.request;
 		const url = new URL(request.url);
 
-		if (url.pathname === '/' || url.pathname === '/service-worker') {
+		if (url.pathname === '/' || url.pathname === '/service-worker.js') {
 			// Add logic to decide whether to serve an asset or run your original Worker code
 			return handleEvent(event);
 			// 将请求代理到 Cloudflare Pages 部署的网站
