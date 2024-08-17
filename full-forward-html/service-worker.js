@@ -17,8 +17,8 @@ self.addEventListener('fetch', (event) => {
 
 	// 处理 fetch 请求
 	if (!url.href.startsWith(prefix)) {
-		// const modifiedUrl = prefix + encodeURIComponent(url.href);
-		const modifiedRequest = new Request(url.href, {
+		const modifiedUrl = prefix + url.href;
+		const modifiedRequestInit = {
 			method: event.request.method,
 			headers: event.request.headers,
 			body: event.request.body,
@@ -28,10 +28,17 @@ self.addEventListener('fetch', (event) => {
 			redirect: event.request.redirect,
 			referrer: event.request.referrer,
 			integrity: event.request.integrity,
-		});
+		};
+
+		// 如果有 body，设置 duplex: 'half'
+		if (event.request.body) {
+			modifiedRequestInit.duplex = 'half';
+		}
+
+		const modifiedRequest = new Request(modifiedUrl, modifiedRequestInit);
 		event.respondWith(fetch(modifiedRequest));
 		return;
-	}else
-
-	event.respondWith(fetch(event.request));
+	} else {
+		event.respondWith(fetch(event.request));
+	}
 });

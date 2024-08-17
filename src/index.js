@@ -1,12 +1,63 @@
 addEventListener('fetch', (event) => {
 	event.respondWith(handleRequest(event.request));
 });
+serviceWorker = `
+// public/service-worker.js
+self.addEventListener('install', (event) => {
+	console.log('Service Worker installing...');
+	self.skipWaiting();
+});
 
+self.addEventListener('activate', (event) => {
+	console.log('Service Worker activating...');
+	event.waitUntil(self.clients.claim());
+});
+
+self.addEventListener('fetch', (event) => {
+	console.log('Fetch event for:', event.request.url);
+
+	const prefix = 'https://forward.paperai.life/proxy/';
+	const url = new URL(event.request.url);
+
+	// 处理 fetch 请求
+	if (!url.href.startsWith(prefix)) {
+		const modifiedUrl = prefix + url.href;
+		const modifiedRequestInit = {
+			method: event.request.method,
+			headers: event.request.headers,
+			body: event.request.body,
+			mode: event.request.mode,
+			credentials: event.request.credentials,
+			cache: event.request.cache,
+			redirect: event.request.redirect,
+			referrer: event.request.referrer,
+			integrity: event.request.integrity,
+		};
+
+		// 如果有 body，设置 duplex: 'half'
+		if (event.request.body) {
+			modifiedRequestInit.duplex = 'half';
+		}
+
+		const modifiedRequest = new Request(modifiedUrl, modifiedRequestInit);
+		event.respondWith(fetch(modifiedRequest));
+		return;
+	} else {
+		event.respondWith(fetch(event.request));
+	}
+});
+`;
 async function handleRequest(request) {
 	const url = new URL(request.url);
+	if (url.pathname === '/service-worker.js') {
+		// 直接返回 Service Worker 脚本内容
+		return new Response(serviceWorker, {
+			headers: { 'Content-Type': 'application/javascript' },
+		});
+	}
 	if (url.pathname === '/' || url.pathname === '/proxy/') {
 		// 将请求代理到 Cloudflare Pages 部署的网站
-		const pagesUrl = 'https://pages.paperai.life'; // 将其替换为你的 Pages URL
+		const pagesUrl = 'https://html.paperai.life'; // 将其替换为你的 Pages URL https://pages.paperai.life
 		return fetch(pagesUrl);
 	}
 	let actualUrlStr;
