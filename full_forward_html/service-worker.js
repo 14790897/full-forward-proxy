@@ -10,11 +10,13 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-	console.log('Fetch event for:', event.request.url);
-
-	const prefix = 'https://forward.paperai.life/proxy/';
 	const url = new URL(event.request.url);
-	// 如果请求路径不以 '/proxy/' 开头
+	const prefix = `${url}/proxy/`;
+	console.log('prefix:', prefix);
+	if (url.pathname === '/' || url.pathname === '/proxy/') {
+		event.respondWith(fetch(event.request)); // 直接传递给worker
+	}
+	// 如果请求路径不以 '/proxy/' 开头，需要从cookie获得域名
 	if (!url.pathname.startsWith('/proxy/')) {
 		// 从请求头中获取 Cookie
 		const cookie = event.request.headers.get('Cookie');
@@ -60,7 +62,7 @@ self.addEventListener('fetch', (event) => {
 			});
 		}
 	}
-	// 处理 fetch 请求
+	// 如果是以/proxy/开头，则传给worker处理	
 	else if (!url.href.startsWith(prefix)) {
 		const modifiedUrl = prefix + url.href;
 		const modifiedRequestInit = {

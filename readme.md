@@ -8,13 +8,13 @@
 
 ## 详细步骤
 
-1. 创建 KV
+<!-- 1. 创建 KV
    ```sh
    wrangler kv:namespace create full_forward
    wrangler kv:key put --binding=full_forward  "/" ./full-forward-html/index.html
    wrangler kv:key put --binding=full_forward  "/service-worker.js" ./full-forward-html/service-worker.js
-   ```
-2. 部署
+   ``` -->
+1. 部署
    ```sh
    wrangler deploy
    ```
