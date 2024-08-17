@@ -10,11 +10,13 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+	console.log('Fetch event for:', event.request.url);
+
 	const prefix = 'https://forward.paperai.life/proxy/';
 	const url = new URL(event.request.url);
 
 	// 处理 fetch 请求
-	if (!url.href.startsWith(prefix) && url.protocol.startsWith('http')) {
+	if (!url.href.startsWith(prefix)) {
 		const modifiedUrl = prefix + encodeURIComponent(url.href);
 		const modifiedRequest = new Request(modifiedUrl, {
 			method: event.request.method,
