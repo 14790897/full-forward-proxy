@@ -40,7 +40,7 @@ async function handle(event) {
 		const modifiedResponse = new Response(response.body, response);
 		modifiedResponse.headers.set('Access-Control-Allow-Origin', '*');
 		// 使用一个cookie来记录当前访问的网站
-		const currentSiteCookie = `current_site=${encodeURIComponent(actualUrl.origin)}; Path=/; HttpOnly; Secure`;
+		const currentSiteCookie = `current_site=${encodeURIComponent(actualUrl.origin)}; Path=/; SameSite=None;`;
 		modifiedResponse.headers.append('Set-Cookie', currentSiteCookie);
 		return modifiedResponse;
 	} catch (e) {

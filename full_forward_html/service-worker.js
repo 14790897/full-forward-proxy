@@ -23,7 +23,8 @@ self.addEventListener('fetch', (event) => {
 
 		// 从请求头中获取 Cookie
 		const cookie = event.request.headers.get('Cookie');
-		console.log('Request does not start with /proxy/. Checking cookies..., requestUrl.origin:', requestUrl.origin, 'cookie:',cookie);
+		console.log('event.request.headers:', event.request.headers);
+		console.log('Request does not start with /proxy/. 准备从cookie获得域名, requestUrl.origin:', requestUrl.origin, 'cookie:', cookie);
 
 		if (cookie) {
 			// 解析 Cookie 为对象
