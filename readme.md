@@ -16,6 +16,7 @@
    ``` -->
 1. 部署
    ```sh
+	npm install -g wrangler
    wrangler deploy
    ```
 
@@ -24,14 +25,11 @@
 - 代理功能：拦截并通过 Cloudflare Worker 转发到目标网站的请求。
 - 自动 URL 重写：修改 HTML 内容中的相对 URL，使它们通过代理加载。
 - Cookie 记录：在 Cookie 中存储当前访问的目标网站，以便处理后续特殊地直接对根路径请求时不需要再次提供完整的 URL。
-- 重写 fetch 和 XMLHttpRequest：在 HTML 页面中注入 JavaScript，确保通过 fetch 或 XMLHttpRequest 动态加载的内容也通过代理进行。
+- service worker: 拦截非代理网站的请求，使得它们也走代理
 
 ## 使用方法
 
 在任意 url 前面加上 https://你的域名/proxy/ 即可使用 cloudflare 加速。
 
-## 未完成
-
-使用 service worker 代理全部请求
 
 ## acknowledgement: https://github.com/gaboolic/cloudflare-reverse-proxy/tree/main

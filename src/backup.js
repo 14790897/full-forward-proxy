@@ -134,7 +134,7 @@ async function updateRelativeUrls(response, baseUrl) {
 		}
 		return match;
 	});
-	// 在 </body> 之前注入 JavaScript 代码
+	// 在 </body> 之前注入 JavaScript 代码(这个似乎没有用，无法改写，目前使用cookie可以代替这个代码的功能)
 	const scriptToInject = `
   <script>
     (function() {
