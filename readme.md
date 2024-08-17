@@ -1,10 +1,10 @@
-# cloudflare-reverse-proxy
+# full-forward-proxy
 
-本项目是 cloudflare 反向代理。在 cloudflare 网站中新建 worker，把 worker.js 文件中的内容复制进去即可使用。
+本项目是 cloudflare 前向代理。在 cloudflare 网站中新建 worker，把 worker.js 文件中的内容复制进去即可使用。
 
 使用方法为在任意 url 前面加上 https://你的域名/proxy/ 即可使用 cloudflare 加速。
 
-例如 https://1.coinuxdo.me/proxy/https://github.com/14790897
+例如 https://forward.paperai.life/proxy/https://github.com/14790897
 
 # 详细步骤
 
