@@ -14,9 +14,54 @@ self.addEventListener('fetch', (event) => {
 
 	const prefix = 'https://forward.paperai.life/proxy/';
 	const url = new URL(event.request.url);
+	// 如果请求路径不以 '/proxy/' 开头
+	if (!url.pathname.startsWith('/proxy/')) {
+		// 从请求头中获取 Cookie
+		const cookie = event.request.headers.get('Cookie');
 
+		if (cookie) {
+			// 解析 Cookie 为对象
+			const cookieObj = Object.fromEntries(
+				cookie.split(';').map((cookie) => {
+					const [key, ...val] = cookie.trim().split('=');
+					return [key.trim(), val.join('=').trim()];
+				})
+			);
+
+			if (cookieObj.current_site) {
+				// 如果 current_site 存在，从中构造实际的 URL
+				const actualUrlStr = decodeURIComponent(cookieObj.current_site) + url.pathname + url.search + url.hash;
+				console.log('actualUrlStr in cookieObj:', actualUrlStr);
+				const actualUrl = new URL(actualUrlStr);
+
+				// 构造重定向 URL
+				const redirectUrl = `${url.origin}/proxy/${actualUrl.href}`;
+
+				// 响应重定向
+				event.respondWith(Response.redirect(redirectUrl, 301));
+				return;
+			} else {
+				// 如果 Cookie 中没有 current_site
+				event.respondWith(
+					new Response(
+						`No website in cookie, Please visit a website first, cookie: ${JSON.stringify(cookieObj)}, website: ${cookieObj.current_site}`,
+						{
+							status: 400,
+							headers: { 'Content-Type': 'text/plain' },
+						}
+					)
+				);
+				return;
+			}
+		} else {
+			return new Response(`no cookie, Please visit a website first,cookie:${JSON.stringify(cookieObj)}`, {
+				status: 400,
+				headers: { 'Content-Type': 'text/plain' },
+			});
+		}
+	}
 	// 处理 fetch 请求
-	if (!url.href.startsWith(prefix)) {
+	else if (!url.href.startsWith(prefix)) {
 		const modifiedUrl = prefix + url.href;
 		const modifiedRequestInit = {
 			method: event.request.method,
