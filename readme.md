@@ -15,15 +15,17 @@
    wrangler kv:key put --binding=full_forward  "/service-worker.js" ./full-forward-html/service-worker.js
    ``` -->
 
-1. 部署到 cf （使用 wrangler）
+1. 克隆仓库并切换到仓库目录
+2. 部署到 cf （使用 wrangler）
 
    ```sh
    npm install -g wrangler
+   wrangler login
    npm install
    wrangler deploy
    ```
 
-2. 在 cf 上配置自定义域名（可选）
+3. 在 cf 上配置自定义域名（可选）
 
 ## 功能
 
