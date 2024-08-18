@@ -70,9 +70,9 @@ bucket = "./full_forward_html" # Add the directory with your static assets!
 
 # Bind a KV Namespace. Use KV as persistent storage for small key-value pairs.
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#kv-namespaces
-[[kv_namespaces]]
-binding = "full_forward"
-id = "2184c534b3574d9182ccd5189edb2182"
+# [[kv_namespaces]]
+# binding = "full_forward"
+# id = ""
 
 # Bind an mTLS certificate. Use to present a client certificate when communicating with another service.
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#mtls-certificates

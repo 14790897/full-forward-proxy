@@ -1,12 +1,12 @@
 # full-forward-proxy
 
-本项目是 cloudflare 前向代理。在 cloudflare 网站中新建 worker，把 worker.js 文件中的内容复制进去即可使用。
+本项目尽全力将网页上的内容全部通过 CF Worker 进行代理, 目前发现对谷歌，油管不适配
 
-使用方法为在任意 url 前面加上 https://你的域名/proxy/ 即可使用 cloudflare 加速。
+在任意 url 前面加上 https://你的域名/proxy/ 即可开始页面全部内容代理
 
 例如 https://forward.paperai.life/proxy/https://github.com/14790897
 
-## 详细步骤
+## 自己搭建步骤
 
 <!-- 1. 创建 KV
    ```sh
@@ -14,11 +14,16 @@
    wrangler kv:key put --binding=full_forward  "/" ./full-forward-html/index.html
    wrangler kv:key put --binding=full_forward  "/service-worker.js" ./full-forward-html/service-worker.js
    ``` -->
-1. 部署
+
+1. 部署到 cf （使用wrangler）
+
    ```sh
-	npm install -g wrangler
+   npm install -g wrangler
+   npm install
    wrangler deploy
    ```
+
+2. 在 cf 上配置自定义域名（可选）
 
 ## 功能
 
@@ -29,7 +34,6 @@
 
 ## 使用方法
 
-在任意 url 前面加上 https://你的域名/proxy/ 即可使用 cloudflare 加速。
-
+在任意 url 前面加上 https://你的域名/proxy/
 
 ## acknowledgement: https://github.com/gaboolic/cloudflare-reverse-proxy/tree/main

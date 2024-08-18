@@ -10,7 +10,7 @@ async function handle(event) {
 		const url = new URL(request.url);
 
 		if (url.pathname === '/' || url.pathname === '/service-worker.js') {
-			// Add logic to decide whether to serve an asset or run your original Worker code
+			//首页处理
 			return handleEvent(event);
 			// 将请求代理到 Cloudflare Pages 部署的网站
 			// const pagesUrl = 'https://html.paperai.life'; // 将其替换为你的 Pages URL https://pages.paperai.life
@@ -96,10 +96,17 @@ async function updateRelativeUrls(response, baseUrl, prefix) {
 	// });
 	// 替换HTML中的相对路径, 不能替换action，会报错: 请enable cookie
 	text = text.replace(/(href|src|action)="([^"]*?)"/g, (match, p1, p2) => {
+		// 替换不完整链接
 		if (!p2.includes('://') && !p2.startsWith('#')) {
+			// baseurl是前缀加上真实域名
 			console.log(`${p1}="${baseUrl}${p2}"`);
 			return `${p1}="${baseUrl}${p2}"`;
+			// 替换https的完整链接
+		} else if (p2.includes('://') && !match.includes('js')&& !match.includes('css') && !match.includes('mjs')) {
+			console.log(`${p1}="${prefix}${p2}"`);
+			return `${p1}="${prefix}${p2}"`;
 		}
+		// 都不匹配就原样返回
 		return match;
 	});
 	return new Response(text, {
