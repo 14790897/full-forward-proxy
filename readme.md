@@ -15,7 +15,7 @@
    wrangler kv:key put --binding=full_forward  "/service-worker.js" ./full-forward-html/service-worker.js
    ``` -->
 
-1. 部署到 cf （使用wrangler）
+1. 部署到 cf （使用 wrangler）
 
    ```sh
    npm install -g wrangler
@@ -34,6 +34,7 @@
 
 ## 使用方法
 
-在任意 url 前面加上 https://你的域名/proxy/
+1. 访问域名主页，如https://forward.paperai.life，自动安装service worker
+2. 在任意 url 前面加上 https://你的域名/proxy/
 
 ## acknowledgement: https://github.com/gaboolic/cloudflare-reverse-proxy/tree/main
