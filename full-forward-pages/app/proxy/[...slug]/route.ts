@@ -49,6 +49,7 @@ async function handleRequest(request: NextRequest): Promise<NextResponse> {
 		} else {
 			// 解码 URL
 			actualUrlStr = decodeURIComponent(url.pathname.replace('/proxy/', '') + url.search + url.hash);
+			console.log('Actual URL:', actualUrlStr);
 		}
 
 		const actualUrl = new URL(actualUrlStr);
