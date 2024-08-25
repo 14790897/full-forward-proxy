@@ -2,11 +2,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-	console.log('get received in /proxy route:', request.url);
+	console.log('GET request received in /proxy route:', request.url);
 	return handleRequest(request);
 }
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
-	console.log('post received in /proxy route:', request.url);
+	console.log('POST request received in /proxy route:', request.url);
 	return handleRequest(request);
 }
 
@@ -29,7 +30,7 @@ async function handleRequest(request: NextRequest): Promise<NextResponse> {
 				if (cookieObj.current_site) {
 					// 解码 URL
 					actualUrlStr = decodeURIComponent(cookieObj.current_site) + url.pathname + url.search + url.hash;
-					console.log('actualUrlStr in cookieObj:', actualUrlStr);
+					console.log('Actual URL from cookie:', actualUrlStr);
 					const actualUrl = new URL(actualUrlStr);
 					const redirectUrl = `${url.origin}/proxy/${encodeURIComponent(actualUrl.toString())}`;
 					return NextResponse.redirect(redirectUrl, 301);
@@ -51,14 +52,14 @@ async function handleRequest(request: NextRequest): Promise<NextResponse> {
 		}
 
 		const actualUrl = new URL(actualUrlStr);
-		const modifiedRequest = new Request(actualUrl.toString(), {
+		const modifiedRequestInit: RequestInit = {
 			headers: request.headers,
 			method: request.method,
-			body: request.body,
+			body: request.method === 'POST' ? await request.text() : null,
 			redirect: 'follow',
-		});
+		};
 
-		let response = await fetch(modifiedRequest);
+		let response = await fetch(actualUrl.toString(), modifiedRequestInit);
 		const baseUrl = `${url.origin}/proxy/${encodeURIComponent(actualUrl.origin)}`;
 		if (response.headers.get('Content-Type')?.includes('text/html')) {
 			response = await updateRelativeUrls(response, baseUrl, `${url.origin}/proxy/`);
@@ -73,6 +74,7 @@ async function handleRequest(request: NextRequest): Promise<NextResponse> {
 
 		return modifiedResponse;
 	} catch (e) {
+		console.error('Error handling request:', e);
 		let pathname = new URL(request.url).pathname;
 		return new NextResponse(`"${pathname}" not found`, {
 			status: 404,
