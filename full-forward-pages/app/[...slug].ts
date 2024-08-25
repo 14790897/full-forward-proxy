@@ -1,16 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
 	try {
 		const url = new URL(request.url);
 
-		let actualUrlStr;
+		let actualUrlStr: string;
 
-		if (!url.pathname.startsWith('/api/proxy/')) {
+		if (!url.pathname.startsWith('/proxy/')) {
 			// Read the previously visited site from cookies
 			const cookie = request.headers.get('cookie');
 			if (cookie) {
-				const cookieObj = Object.fromEntries(
+				const cookieObj: Record<string, string> = Object.fromEntries(
 					cookie.split(';').map((cookie) => {
 						const [key, ...val] = cookie.trim().split('=');
 						return [key.trim(), val.join('=').trim()];
@@ -39,7 +39,7 @@ export async function GET(request) {
 		}
 
 		const actualUrl = new URL(actualUrlStr);
-		const modifiedRequest = new Request(actualUrl, {
+		const modifiedRequest = new Request(actualUrl.toString(), {
 			headers: request.headers,
 			method: request.method,
 			body: request.body,
@@ -61,14 +61,15 @@ export async function GET(request) {
 
 		return modifiedResponse;
 	} catch (e) {
-		return new NextResponse(`"${new URL(request.url).pathname}" not found`, {
+		let pathname = new URL(request.url).pathname;
+		return new NextResponse(`"${pathname}" not found`, {
 			status: 404,
 			statusText: 'Not Found',
 		});
 	}
 }
 
-async function updateRelativeUrls(response, baseUrl, prefix) {
+async function updateRelativeUrls(response: Response, baseUrl: string, prefix: string): Promise<Response> {
 	let text = await response.text();
 
 	text = text.replace(/(href|src|action)="([^"]*?)"/g, (match, p1, p2) => {
