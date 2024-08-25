@@ -65,14 +65,16 @@ async function handleRequest(request: NextRequest): Promise<NextResponse> {
 		if (response.headers.get('Content-Type')?.includes('text/html')) {
 			response = await updateRelativeUrls(response, baseUrl, `${url.origin}/proxy/`);
 		}
+		const clonedResponse = response.clone();
+		console.log('clonedResponse:', clonedResponse);
 
-		const modifiedResponse = new NextResponse(response.body, {
+		const modifiedResponse = new NextResponse(clonedResponse.body, {
 			headers: response.headers,
 		});
 		modifiedResponse.headers.set('Access-Control-Allow-Origin', '*');
 		const currentSiteCookie = `current_site=${encodeURIComponent(actualUrl.origin)}; Path=/; Secure`;
 		modifiedResponse.headers.append('Set-Cookie', currentSiteCookie);
-
+		console.log('modifiedResponse.body:', modifiedResponse.body);
 		return modifiedResponse;
 	} catch (e) {
 		console.error('Error handling request:', e);

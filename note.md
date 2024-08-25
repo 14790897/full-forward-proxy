@@ -3,6 +3,7 @@
 
 注意location头部的修改
 参考
+https://github.com/gaboolic/cloudflare-reverse-proxy
 https://github.com/BomberFish/Infrared
 https://github.com/14790897/siteproxy
 https://github.com/1234567Yang/cf-proxy-ex
