@@ -1,3 +1,4 @@
+// app/proxy
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -7,7 +8,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 		let actualUrlStr: string;
 
 		if (!url.pathname.startsWith('/proxy/')) {
-			// Read the previously visited site from cookies
+			// 从Cookie中读取之前访问的网站
 			const cookie = request.headers.get('cookie');
 			if (cookie) {
 				const cookieObj: Record<string, string> = Object.fromEntries(
@@ -17,10 +18,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 					})
 				);
 				if (cookieObj.current_site) {
+					// 解码 URL
 					actualUrlStr = decodeURIComponent(cookieObj.current_site) + url.pathname + url.search + url.hash;
 					console.log('actualUrlStr in cookieObj:', actualUrlStr);
 					const actualUrl = new URL(actualUrlStr);
-					const redirectUrl = `${url.origin}/api/proxy/${actualUrl}`;
+					const redirectUrl = `${url.origin}/proxy/${encodeURIComponent(actualUrl.toString())}`;
 					return NextResponse.redirect(redirectUrl, 301);
 				} else {
 					return new NextResponse(`No website in cookie. Please visit a website first.`, {
@@ -35,7 +37,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 				});
 			}
 		} else {
-			actualUrlStr = url.pathname.replace('/api/proxy/', '') + url.search + url.hash;
+			// 解码 URL
+			actualUrlStr = decodeURIComponent(url.pathname.replace('/proxy/', '') + url.search + url.hash);
 		}
 
 		const actualUrl = new URL(actualUrlStr);
@@ -47,16 +50,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 		});
 
 		let response = await fetch(modifiedRequest);
-		const baseUrl = `${url.origin}/api/proxy/${actualUrl.origin}`;
+		const baseUrl = `${url.origin}/proxy/${encodeURIComponent(actualUrl.origin)}`;
 		if (response.headers.get('Content-Type')?.includes('text/html')) {
-			response = await updateRelativeUrls(response, baseUrl, `${url.origin}/api/proxy/`);
+			response = await updateRelativeUrls(response, baseUrl, `${url.origin}/proxy/`);
 		}
 
 		const modifiedResponse = new NextResponse(response.body, {
 			headers: response.headers,
 		});
 		modifiedResponse.headers.set('Access-Control-Allow-Origin', '*');
-		const currentSiteCookie = `current_site=${encodeURIComponent(actualUrl.origin)}; Path=/;  Secure`;
+		const currentSiteCookie = `current_site=${encodeURIComponent(actualUrl.origin)}; Path=/; Secure`;
 		modifiedResponse.headers.append('Set-Cookie', currentSiteCookie);
 
 		return modifiedResponse;
