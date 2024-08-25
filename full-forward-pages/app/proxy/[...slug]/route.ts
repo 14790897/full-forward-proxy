@@ -54,7 +54,10 @@ async function handleRequest(request: NextRequest): Promise<NextResponse> {
 
 		const actualUrl = new URL(actualUrlStr);
 		const modifiedRequestInit: RequestInit = {
-			headers: request.headers,
+			headers: {
+				...request.headers,
+				'Accept-Encoding': ' deflate, br, zstd', // 禁用 gzip, br 等压缩方式
+			},
 			method: request.method,
 			body: request.method === 'POST' ? await request.text() : null,
 			redirect: 'follow',
@@ -68,7 +71,7 @@ async function handleRequest(request: NextRequest): Promise<NextResponse> {
 		const clonedResponse = response.clone();
 		console.log('clonedResponse:', clonedResponse);
 
-		const modifiedResponse = new NextResponse(clonedResponse.body, {
+		const modifiedResponse = new NextResponse(response.body, {
 			headers: response.headers,
 		});
 		modifiedResponse.headers.set('Access-Control-Allow-Origin', '*');
