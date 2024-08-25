@@ -2,6 +2,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+	console.log('get received in /proxy route:', request.url);
+	return handleRequest(request);
+}
+export async function POST(request: NextRequest): Promise<NextResponse> {
+	console.log('post received in /proxy route:', request.url);
+	return handleRequest(request);
+}
+
+async function handleRequest(request: NextRequest): Promise<NextResponse> {
 	try {
 		const url = new URL(request.url);
 

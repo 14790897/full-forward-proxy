@@ -11,10 +11,10 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
 	const requestUrl = new URL(event.request.url); // 请求的域名
-	const originUrl = new URL(self.location.href); //当前所在的网站的域名的url对象
-	const domain = originUrl.origin; //当前所在的网站的域名
+	const originUrl = new URL(self.location.href); // 当前所在的网站的域名的url对象
+	const domain = originUrl.origin; // 当前所在的网站的域名
 	const prefix = `${domain}/proxy/`;
-	// console.log('prefix:', prefix, 'requestUrl:', requestUrl.url);
+
 	if (requestUrl.pathname === '/' || requestUrl.pathname === '/service-worker.js') {
 		event.respondWith(fetch(event.request)); // 直接传递给worker
 	}
@@ -28,13 +28,16 @@ self.addEventListener('fetch', (event) => {
 			return;
 		}
 
-		const modifiedUrl = prefix + requestUrl.href;
+		// 对 URL 进行编码，避免特殊字符引发的问题
+		const encodedUrl = encodeURIComponent(requestUrl.href);
+		const modifiedUrl = `${prefix}${encodedUrl}`;
 		console.log(
 			'URL does not start with prefix. Adding prefix and redirecting...,modifiedUrl:',
 			modifiedUrl,
 			'originRequestUrl:',
 			requestUrl.href
 		);
+
 		const modifiedRequestInit = {
 			method: event.request.method,
 			headers: event.request.headers,
@@ -56,7 +59,7 @@ self.addEventListener('fetch', (event) => {
 		const redirectUrl = new URL(modifiedUrl);
 		const redirectResponse = Response.redirect(redirectUrl, 302);
 		// const modifiedRequest = new Request(modifiedUrl, modifiedRequestInit);
-		event.respondWith(redirectResponse);
+		event.respondWith(redirectResponse);//这里不知道为什么不用原来的fetch了？
 		// event.respondWith(fetch(modifiedRequest));
 		return;
 	} else {

@@ -2,11 +2,13 @@
 import { useState } from 'react';
 
 export default function HomePage() {
-	const [url, setUrl] = useState('https://github.com');
+	const [url, setUrl] = useState('https://github.com/14790897');
 
 	const handleSubmit = (event: any) => {
 		event.preventDefault();
-		const proxyUrl = `/proxy/${url}`;
+		// 使用 encodeURIComponent 对 URL 进行编码
+		const encodedUrl = encodeURIComponent(url);
+		const proxyUrl = `/proxy/${encodedUrl}`;
 		window.location.href = proxyUrl;
 	};
 
@@ -17,7 +19,7 @@ export default function HomePage() {
 				<input
 					type="text"
 					className="block w-full p-4 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-					placeholder="https://example.com"
+					placeholder="https://github.com/14790897"
 					value={url}
 					onChange={(e) => setUrl(e.target.value)}
 					required
