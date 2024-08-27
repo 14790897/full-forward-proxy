@@ -73,7 +73,8 @@ async function handle(event) {
 		modifiedResponse.headers.delete('Content-Security-Policy');
 		modifiedResponse.headers.delete('X-Content-Security-Policy');
 		modifiedResponse.headers.delete('X-WebKit-CSP');
-		modifiedResponse.headers.set('Access-Control-Allow-Origin', '*');
+		modifiedResponse.headers.delete('Permissions-Policy');
+		modifiedResponse.headers.set('X-Frame-Options', 'ALLOWALL');
 		modifiedResponse.headers.set('Access-Control-Allow-Origin', '*');
 		// 使用一个cookie来记录当前访问的网站
 		const currentSiteCookie = `current_site=${encodeURIComponent(actualUrl.origin)}; Path=/;  Secure`;
@@ -107,7 +108,7 @@ async function updateRelativeUrls(response, baseUrl, prefix) {
 			console.log(`${p1}="${baseUrl}${p2}"`);
 			return `${p1}="${baseUrl}${p2}"`;
 			// 替换https的完整链接
-		} else if (p2.includes('://') && !match.includes('js') && !match.includes('css') && !match.includes('mjs')) {
+		} else if (p2.includes('://')) {
 			console.log(`${p1}="${prefix}${p2}"`);
 			return `${p1}="${prefix}${p2}"`;
 		}
