@@ -102,13 +102,14 @@ async function updateRelativeUrls(response, baseUrl, prefix) {
 			console.log(`${p1}="${baseUrl}${p2}"`);
 			return `${p1}="${baseUrl}${p2}"`;
 			// 替换https的完整链接
-		} else if (p2.includes('://') && !match.includes('js')&& !match.includes('css') && !match.includes('mjs')) {
+		} else if (p2.includes('://') && !match.includes('js') && !match.includes('css') && !match.includes('mjs')) {
 			console.log(`${p1}="${prefix}${p2}"`);
 			return `${p1}="${prefix}${p2}"`;
 		}
 		// 都不匹配就原样返回
 		return match;
 	});
+
 	return new Response(text, {
 		headers: response.headers,
 	});

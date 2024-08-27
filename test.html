@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Fake window.location.href</title>
+    <script src="https://www.google.com/recaptcha/enterprise.js?render=6Lfh9i8qAAAAAHdMMpz3dJjLhmcsckckLeu8yTpj"></script>
+  </head>
+  <body>
+    <h1>Testing Fake window.location.href</h1>
+    <p id="originalHref">Original Href:</p>
+    <p id="fakeHref">Fake Href:</p>
+    <button id="recaptchaButton">Verify reCAPTCHA</button>
+    <p id="recaptchaToken">reCAPTCHA Token:</p>
+
+    <script>
+      // Display the original href
+      document.getElementById("originalHref").innerText =
+        "Original Href: " + window.location.href;
+
+      // Create a proxy for window.location to fake the href value
+      const locationProxy = new Proxy(window.location, {
+        get(target, prop) {
+          if (prop === "href") {
+            return "https://google.com";
+          }
+          return Reflect.get(target, prop);
+        },
+      });
+
+      // Display the fake href using the proxy
+      document.getElementById("fakeHref").innerText =
+        "Fake Href: " + locationProxy.href;
+
+      // Handle reCAPTCHA button click
+      document.getElementById("recaptchaButton").addEventListener("click", (e) => {
+        e.preventDefault();
+        grecaptcha.enterprise.ready(async () => {
+          const token = await grecaptcha.enterprise.execute(
+            "6Lfh9i8qAAAAAHdMMpz3dJjLhmcsckckLeu8yTpj",
+            { action: "LOGIN" }
+          );
+          document.getElementById("recaptchaToken").innerText = "reCAPTCHA Token: " + token;
+        });
+      });
+    </script>
+  </body>
+</html>
