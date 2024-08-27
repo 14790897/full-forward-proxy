@@ -69,6 +69,11 @@ async function handle(event) {
 		}
 
 		const modifiedResponse = new Response(response.body, response);
+		// 删除 CSP 相关的响应头
+		modifiedResponse.headers.delete('Content-Security-Policy');
+		modifiedResponse.headers.delete('X-Content-Security-Policy');
+		modifiedResponse.headers.delete('X-WebKit-CSP');
+		modifiedResponse.headers.set('Access-Control-Allow-Origin', '*');
 		modifiedResponse.headers.set('Access-Control-Allow-Origin', '*');
 		// 使用一个cookie来记录当前访问的网站
 		const currentSiteCookie = `current_site=${encodeURIComponent(actualUrl.origin)}; Path=/;  Secure`;
