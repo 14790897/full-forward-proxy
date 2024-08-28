@@ -7,9 +7,10 @@ addEventListener('fetch', (event) => {
 async function handle(event) {
 	try {
 		const request = event.request;
-		const url = new URL(request.url);
+		const requestUrlObject = new URL(request.url);
+    	const prefix = `${requestUrlObject.origin}/`;
 
-		if (url.pathname === '/' || url.pathname === '/service-worker.js') {
+		if (requestUrlObject.pathname === '/' || requestUrlObject.pathname === '/service-worker.js') {
 			//首页处理
 			return handleEvent(event);
 			// 将请求代理到 Cloudflare Pages 部署的网站
@@ -17,7 +18,7 @@ async function handle(event) {
 			// return fetch(pagesUrl);
 		}
 		let actualUrlStr;
-		if (!url.pathname.startsWith('/proxy/')) {
+		if (!requestUrlObject.pathname.startsWith('/http')) {
 			//从cookie中读取之前访问的网站，设置actualUrlStr
 			const cookie = request.headers.get('Cookie');
 			if (cookie) {
@@ -28,10 +29,11 @@ async function handle(event) {
 					})
 				);
 				if (cookieObj.current_site) {
-					actualUrlStr = decodeURIComponent(cookieObj.current_site) + url.pathname + url.search + url.hash;
+					actualUrlStr =
+						decodeURIComponent(cookieObj.current_site) + requestUrlObject.pathname + requestUrlObject.search + requestUrlObject.hash;
 					console.log('actualUrlStr in cookieObj:', actualUrlStr);
 					const actualUrl = new URL(actualUrlStr);
-					const redirectUrl = `${url.origin}/proxy/${actualUrl}`;
+					const redirectUrl = `${prefix}/${actualUrl}`;
 					return Response.redirect(redirectUrl, 301);
 				} else {
 					return new Response(
@@ -49,8 +51,8 @@ async function handle(event) {
 				});
 			}
 		} else {
-			// 例如https://14790897.xyz/proxy/https://youtube.com 会访问 https://youtube.com
-			actualUrlStr = url.pathname.replace('/proxy/', '') + url.search + url.hash; //使用的只有pathname
+			// 例如https://14790897.xyz/https://youtube.com 会访问 https://youtube.com
+			actualUrlStr = requestUrlObject.pathname.replace('/', '') + requestUrlObject.search + requestUrlObject.hash; //使用的只有pathname
 		}
 		const actualUrl = new URL(actualUrlStr);
 		console.log('actualUrlStr:', actualUrlStr);
@@ -63,9 +65,9 @@ async function handle(event) {
 		});
 
 		let response = await fetch(modifiedRequest);
-		const baseUrl = `${url.origin}/proxy/${actualOrigin}`; //前缀加上真实域名
+		const baseUrl = `${prefix}/${actualOrigin}`; //前缀加上真实域名
 		if (response.headers.get('Content-Type')?.includes('text/html')) {
-			response = await updateRelativeUrls(response, baseUrl, `${url.origin}/proxy/`);
+			response = await updateRelativeUrls(response, baseUrl, `${prefix}`);
 		}
 
 		const modifiedResponse = new Response(response.body, response);
@@ -100,7 +102,7 @@ async function updateRelativeUrls(response, baseUrl, prefix) {
 	// 	console.log(`${prefix}${match}`);
 	// 	return `${prefix}${match}`;
 	// });
-	// 替换HTML中的相对路径, 不能替换action，会报错: 请enable cookie
+	// 替换HTML中的相对路径
 	text = text.replace(/(href|src|action)="([^"]*?)"/g, (match, p1, p2) => {
 		// 替换不完整链接
 		if (!p2.includes('://') && !p2.startsWith('#')) {
