@@ -283,11 +283,6 @@ function windowLocationInject() {
 
 
 
-
-
-
-
-
 function historyInject(){
   const originalPushState = History.prototype.pushState;
   const originalReplaceState = History.prototype.replaceState;
@@ -389,34 +384,6 @@ function covScript(){ //由于observer经过测试不会hook添加的script标�
 }
 //*************************************************************************************************************
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 networkInject();
 windowOpenInject();
 documentLocationInject();
@@ -471,75 +438,7 @@ console.log("WINDOW CORS ERROR EVENT ADDED");
 
 
 `;
-const mainPage = `
-<html>
-<head>
-  <style>
-    body{
-      background:rgb(150,10,10);
-      color:rgb(240,240,0);
-    }
-    a{
-      color:rgb(250,250,180);
-    }
-    del{
-      color:rgb(190,190,190);
-    }
-    .center{
-      text-align:center;
-    }
-    .important{
-      font-weight:bold;
-      font-size:27;
-    }
-  </style>
-</head>
-<body>
-  <h3 class="center">
-    I made this project because some extreme annoying network filter software in my school, which is notorious "Goguardian", and now it is open source at <a>https://github.com/1234567Yang/cf-proxy-ex/</a>.
-  </h3>
-  <br><br><br>
-  <ul style="font-size:25;">
-  <li class="important">How to use this proxy:<br>
-    Type the website you want to go to after the website's url, for example: <br>
-    https://the current url/github.com<br>OR<br>https://the current url/https://github.com</li>
-    <br>
-    <li>If your browser show 400 bad request, please clear your browser cookie<br></li>
-    <li>Why I make this:<br> Because school blcok every website that I can find math / CS and other subjects' study material and question solutions. In the eyes of the school, China (and some other countries) seems to be outside the scope of this "world". They block access to server IP addresses in China and block access to Chinese search engines and video websites. Of course, some commonly used social software has also been blocked, which once made it impossible for me to send messages to my parents on campus. I don't think that's how it should be, so I'm going to fight it as hard as I can. I believe this will not only benefit myself, but a lot more people can get benefits.</li>
-   <li>If this website is blocked by your school: <br>Contact me at <a href="mailto:help@wvusd.homes">help@wvusd.homes</a>, and I will setup a new webpage.</li>
-    <li>Limitation:<br>Although I tried my best to make every website proxiable, there still might be pages or resources that can not be load, and the most important part is that <span class="important">YOU SHOULD NEVER LOGIN ANY ACCOUNT VIA ONLINE PROXY</span>.</li>
-  </ul>
 
-  <h1 style="font-size:30">
-
-  </h1>
-  <br><br><br>
-  <h3>
-
-    <br>
-    <span>Proxies that can bypass the school network blockade:</span>
-    <br><br>
-    <span>Traditional VPNs such as <a href="https://hide.me/">hide me</a>.</span>
-    <br><br>
-    <a href="https://www.torproject.org/">Tor Browser</a><span>, short for The Onion Router, is free and open-source software for enabling anonymous communication. It directs Internet traffic via a free, worldwide volunteer overlay network that consists of more than seven thousand relays. Using Tor makes it more difficult to trace a user's Internet activity.</span>
-    <br><br>
-    <a href="https://v2rayn.org/">v2RayN</a><span> is a GUI client for Windows, support Xray core and v2fly core and others. You must subscribe to an <a href = "https://aijichang.org/6190/">airport</a> to use it. For example, you can subscribe <a href="https://feiniaoyun.xyz/">fly bird cloud</a>.</span>
-    <br><br>
-    <span>Bypass <del>Goguardian</del> by proxy: You can buy a domain($1) and setup by yourself: </span><a href="https://github.com/gaboolic/cloudflare-reverse-proxy">how to setup a proxy</a><span>. Unless <del>Goguardian</del> use white list mode, this can always work.</span>
-    <br>
-    <span>Too expensive? Never mind! There are a lot of free domains registration companies (for the first year of the domain) that do not need any credit card, search online!</span>
-    <br><br>
-    <span>Youtube video unblock: "Thanks" for Russia that they started to invade Ukraine and Google blocked the traffic from Russia, there are a LOT of mirror sites working. You can even <a href="https://github.com/iv-org/invidious">setup</a> one by yourself.</span>
-  </h3>
-  <a href="https://goguardian.com" style="visibility:hidden"></a>
-  <a href="https://blocked.goguardian.com/" style="visibility:hidden"></a>
-  <a href="https://www.google.com/gen_204" style="visibility:hidden"></a>
-  <p style="font-size:280px !important;width:100%;location:relative;" class="center">
-    ☭
-  </p>
-</body>
-</html>
-`;
 const redirectError = `
 <html><head></head><body><h2>Error while redirecting: the website you want to access to may contain wrong redirect information, and we can not parse the info</h2></body></html>
 `;
@@ -556,7 +455,7 @@ async function handleRequest(request) {
 	var actualUrlStr = url.pathname.substring(url.pathname.indexOf(str) + str.length) + url.search + url.hash;
 	if (actualUrlStr == '') {
 		//先返回引导界面
-		return getHTMLResponse(mainPage);
+		return getHTMLResponse('hello');
 	}
 
 	try {
