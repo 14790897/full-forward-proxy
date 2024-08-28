@@ -18,10 +18,60 @@ self.addEventListener('fetch', (event) => {
 	if (requestUrl.pathname === '/' || requestUrl.pathname === '/service-worker.js') {
 		event.respondWith(fetch(event.request)); // 直接传递给worker
 	}
-	
+	// 如果请求路径不以 '/proxy/' 开头，需要从cookie获得域名
+	// if (!requestUrl.pathname.startsWith('/proxy/')) {
+
+	// 	// 从请求头中获取 Cookie
+	// 	const cookie = event.request.headers.get('Cookie');
+	// 	console.log('event.request.headers:', event.request.headers);
+	// 	console.log('Request does not start with /proxy/. 准备从cookie获得域名, requestUrl.origin:', requestUrl.origin, 'cookie:', cookie);
+
+	// 	if (cookie) {
+	// 		// 解析 Cookie 为对象
+	// 		const cookieObj = Object.fromEntries(
+	// 			cookie.split(';').map((cookie) => {
+	// 				const [key, ...val] = cookie.trim().split('=');
+	// 				return [key.trim(), val.join('=').trim()];
+	// 			})
+	// 		);
+	// 		console.log('cookieObj.current_site:', cookieObj.current_site);
+	// 		if (cookieObj.current_site) {
+	// 			// 如果 current_site 存在，从中构造实际的 URL
+	// 			const actualUrlStr = decodeURIComponent(cookieObj.current_site) + requestUrl.pathname + requestUrl.search + requestUrl.hash;
+	// 			console.log('actualUrlStr in cookieObj:', actualUrlStr);
+	// 			const actualUrl = new URL(actualUrlStr);
+
+	// 			// 构造重定向 URL
+	// 			const redirectUrl = `${prefix}${actualUrl.href}`;
+	// 			console.log('Redirecting to in cookie:', redirectUrl);
+
+	// 			// 响应重定向
+	// 			event.respondWith(Response.redirect(redirectUrl, 301));
+	// 			return;
+	// 		} else {
+	// 			// 如果 Cookie 中没有 current_site
+	// 			console.log('No website in cookie, Please visit a website first');
+	// 			event.respondWith(
+	// 				new Response(
+	// 					`No website in cookie, Please visit a website first, cookie: ${JSON.stringify(cookieObj)}, website: ${cookieObj.current_site}`,
+	// 					{
+	// 						status: 400,
+	// 						headers: { 'Content-Type': 'text/plain' },
+	// 					}
+	// 				)
+	// 			);
+	// 			return;
+	// 		}
+	// 	} else {
+	// 		console.log('No cookie, Please visit a website first');
+	// 		return new Response(`no cookie, Please visit a website first}`, {
+	// 			status: 400,
+	// 			headers: { 'Content-Type': 'text/plain' },
+	// 		});
+	// 	}
+	// }
 	// 如果请求的域名不以prefix开头，说明他请求了外部的服务那个服务是一个完整的链接，则加上前缀，使得可以代理（chatgpt说对其它域名的请求，无法代理，只能试试在返回页面的时候修改全部url）
 	else if (!requestUrl.href.startsWith(prefix)) {
-
 		const modifiedUrl = prefix + requestUrl.href;
 		console.log(
 			'URL does not start with prefix. Adding prefix and redirecting...,modifiedUrl:',

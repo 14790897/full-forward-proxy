@@ -69,11 +69,6 @@ function changeURL(relativePath){
 //*************************************************************************************************************
 
 
-
-
-
-
-
 function networkInject(){
   //inject network request
   var originalOpen = XMLHttpRequest.prototype.open;
