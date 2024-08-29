@@ -69,7 +69,7 @@
 				event.preventDefault();
 				const input = document.getElementById('url');
 				const actualUrl = input.value;
-				const proxyUrl = '/proxy/' + actualUrl;
+				const proxyUrl = '/' + actualUrl;
 				location.href = proxyUrl;
 			});
 			// 注册service  worker

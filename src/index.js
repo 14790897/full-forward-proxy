@@ -33,7 +33,7 @@ async function handle(event) {
 						decodeURIComponent(cookieObj.current_site) + requestUrlObject.pathname + requestUrlObject.search + requestUrlObject.hash;
 					console.log('actualUrlStr in cookieObj:', actualUrlStr);
 					const actualUrl = new URL(actualUrlStr);
-					const redirectUrl = `${prefix}/${actualUrl}`;
+					const redirectUrl = `${prefix}${actualUrl}`;
 					return Response.redirect(redirectUrl, 301);
 				} else {
 					return new Response(
@@ -65,9 +65,9 @@ async function handle(event) {
 		});
 
 		let response = await fetch(modifiedRequest);
-		const baseUrl = `${prefix}/${actualOrigin}`; //前缀加上真实域名
+		const baseUrl = `${prefix}${actualOrigin}`; //前缀加上真实域名
 		if (response.headers.get('Content-Type')?.includes('text/html')) {
-			response = await updateRelativeUrls(response, baseUrl, `${prefix}`);
+			response = await updateRelativeUrls(response, baseUrl, prefix);
 		}
 
 		const modifiedResponse = new Response(response.body, response);
