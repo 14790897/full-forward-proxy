@@ -4,8 +4,8 @@
 
 ## 使用方法
 
-1. 访问域名主页，如我部署的https://future.paperai.life ，自动安装service worker
-2. 在任意 url 前面加上 https://你的域名/ 例如 https://future.paperai.life/https://github.com/14790897
+1. 访问域名主页，如我部署的https://forward.paperai.life ，自动安装service worker
+2. 在任意 url 前面加上 https://你的域名/proxy/ 例如 https://forward.paperai.life/proxy/https://github.com/14790897
 
 ## 自己搭建步骤
 
@@ -37,7 +37,7 @@
 
 ## 体验网址
 
-https://future.paperai.life
+https://forward.paperai.life
 
 ## 演示视频
 
