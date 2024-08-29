@@ -1,3 +1,4 @@
+// todo 去掉Origin 和 Referer
 import { handleEvent } from './route.js';
 
 addEventListener('fetch', (event) => {
@@ -54,10 +55,10 @@ async function handle(event) {
 			// 例如https://14790897.xyz/https://youtube.com 会访问 https://youtube.com
 			actualUrlStr = requestUrlObject.pathname.replace('/', '') + requestUrlObject.search + requestUrlObject.hash; //使用的只有pathname
 		}
-		const actualUrl = new URL(actualUrlStr);
+		const actualUrlObject = new URL(actualUrlStr);
 		console.log('actualUrlStr:', actualUrlStr);
-		const actualOrigin = actualUrl.origin;
-		const modifiedRequest = new Request(actualUrl, {
+		const actualOrigin = actualUrlObject.origin;
+		const modifiedRequest = new Request(actualUrlObject, {
 			headers: request.headers,
 			method: request.method,
 			body: request.body,
@@ -78,11 +79,6 @@ async function handle(event) {
 		modifiedResponse.headers.delete('Permissions-Policy');
 		modifiedResponse.headers.set('X-Frame-Options', 'ALLOWALL');
 		modifiedResponse.headers.set('Access-Control-Allow-Origin', '*');
-		// 使用一个cookie来记录当前访问的网站
-		if (response.headers.get('Content-Type')?.includes('text/html')) {
-			const currentSiteCookie = `current_site=${encodeURIComponent(actualUrl.origin)}; Path=/;  Secure`;
-			modifiedResponse.headers.append('Set-Cookie', currentSiteCookie);
-		}
 		return modifiedResponse;
 	} catch (e) {
 		let pathname = new URL(event.request.url).pathname;
@@ -129,6 +125,11 @@ async function updateRelativeUrls(response, baseUrl, prefix) {
                     console.log('Service Worker registration failed:', error);
                 });
             }
+			// 设置 Cookie 为当前用户所在网站的域名
+          	const fullPath = location.pathname.replace('/', ''); // 获取路径部分并移除开头的 '/'
+			const actualUrl = new URL(fullPath); // 使用路径创建一个新的 URL 对象
+			const origin = actualUrl.origin; // 提取 origin 部分
+			document.cookie = "current_site=" + encodeURIComponent(origin) + "; Path=/; Secure";
         </script>
     `;
 

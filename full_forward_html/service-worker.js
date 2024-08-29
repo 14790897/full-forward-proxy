@@ -1,5 +1,6 @@
 // public/service-worker.js
 // 网站的作用是通过我的网站域名加上需要代理的网址的完整链接，使得这个网址的流量全部经过我的网站给后端请求进行代理然后再返回给前端
+// sw不能读取cookie：https://stackoverflow.com/questions/59087642/reading-request-headers-inside-a-service-worker
 self.addEventListener('install', (event) => {
 	console.log('Service Worker installing...');
 	self.skipWaiting();
@@ -13,7 +14,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
 	event.respondWith(
 		(async function () {
-			const webRequestUrlObject = new URL(event.request.url); // 用户请求的完整链接,这个链接可能encode也可能没有
+			const webRequestUrlObject = new URL(event.request.url); // 用户请求的完整链接
 			if (
 				webRequestUrlObject.pathname === '/' ||
 				webRequestUrlObject.pathname === '/service-worker.js' ||
@@ -45,13 +46,12 @@ self.addEventListener('fetch', (event) => {
 						const reconstructedTrueUrl = `${decodeURIComponent(lastRequestedDomain)}${webRequestUrlObject.pathname}${
 							webRequestUrlObject.search
 						}`;
-						console.log('Reconstructed URL using last requested domain:', reconstructedTrueUrl);
 						const reconstructedUrl = `${prefix}${reconstructedTrueUrl}`;
 
 						const redirectUrl = new URL(reconstructedUrl);
 						const redirectResponse = Response.redirect(redirectUrl, 308);
 						console.log(
-							'请求的路径不包含完整的 URL,同时它是以我的网站的域名开头,redirectUrl:',
+							'请求的路径不包含完整的 URL,同时它是以我的网站的域名开头,已修改:',
 							redirectUrl.href,
 							'原始请求URL:',
 							webRequestUrlObject.href
@@ -65,20 +65,13 @@ self.addEventListener('fetch', (event) => {
 				// 如果请求的域名不以myWebsiteDomain开头，说明他请求了外部的服务同时那个服务是一个完整的链接，则加上前缀，使得可以代理, 同时我认为这个不是主要的网页所以不将它加入域名的缓存中
 				if (!webRequestUrlObject.href.startsWith(myWebsiteDomain)) {
 					const modifiedUrl = `${prefix}${webRequestUrlObject.href}`;
-					console.log('URl未被代理,已修改:', modifiedUrl, '原始请求URL:', webRequestUrlObject.href);
+					console.log('URL未被添加前缀,已修改:', modifiedUrl, '原始请求URL:', webRequestUrlObject.href);
 					// 这里重定向到新的 URL，暂时不使用
 					const redirectUrl = new URL(modifiedUrl);
 					const redirectResponse = Response.redirect(redirectUrl, 308);
 					return redirectResponse;
 				}
-				console.log(
-					'未修改,链接已经符合代理格式：',
-					webRequestUrlObject.href
-					// 'startsWithmyWebsiteDomain:',
-					// webRequestUrlObject.href.startsWith(myWebsiteDomain),
-					// 'pathname:',
-					// webRequestUrlObject.pathname
-				);
+				console.log('未修改,链接已经符合代理格式：', webRequestUrlObject.href);
 				const response = await fetch(event.request);
 				// 检查响应的 Content-Type 是否为 text/html
 				if (response.headers.get('Content-Type')?.includes('text/html')) {
