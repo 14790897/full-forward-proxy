@@ -1,7 +1,5 @@
 // public/service-worker.js
 // 网站的作用是通过我的网站域名加上需要代理的网址的完整链接，使得这个网址的流量全部经过我的网站给后端请求进行代理然后再返回给前端
-// importScripts("/utils/url.js");
-
 self.addEventListener('install', (event) => {
 	console.log('Service Worker installing...');
 	self.skipWaiting();
@@ -47,7 +45,8 @@ self.addEventListener('fetch', (event) => {
 					const reconstructedUrl = `${prefix}${reconstructedTrueUrl}`;
 
 					const redirectUrl = new URL(reconstructedUrl);
-					const redirectResponse = Response.redirect(redirectUrl, 302);
+					const redirectResponse = Response.redirect(redirectUrl, 308);
+					console.log('请求的域名不包含完整的 URL,同时它是以我的网站的域名开头,redirectUrl:', redirectUrl.href);
 					return redirectResponse;
 				} else {
 					console.log(`No last requested domain available. webRequestUrlObject: ${webRequestUrlObject.href}`);
@@ -60,18 +59,24 @@ self.addEventListener('fetch', (event) => {
 				console.log('URl未被代理,已修改：modifiedUrl:', modifiedUrl, '原始originRequestUrl:', webRequestUrlObject.href);
 				// 这里重定向到新的 URL，暂时不使用
 				const redirectUrl = new URL(modifiedUrl);
-				const redirectResponse = Response.redirect(redirectUrl, 302);
+				const redirectResponse = Response.redirect(redirectUrl, 308);
+				// console.log('请求的域名不以myWebsiteDomain开头,redirectUrl:', redirectUrl.href);
 				return redirectResponse;
 			} else {
 				console.log('未修改,说明这个链接已经符合代理格式：', webRequestUrlObject.href);
-				await getUrlOriginPutCache(webRequestUrlObject);
-				return fetch(event.request);
+				const response = await fetch(event.request);
+				// 检查响应的 Content-Type 是否为 text/html
+				if (response.headers.get('Content-Type')?.includes('text/html')) {
+					await getUrlOriginPutCache(webRequestUrlObject);
+				}
+				return response;
 			}
 		} else {
 			// 如果请求是 chrome-extension: 或 about: 协议的，直接返回原始请求的结果
+			console.log('不需要代理的请求：', webRequestUrlObject.href);
 			return fetch(event.request);
 		}
-	});
+	}());
 });
 
 const getUrlOriginPutCache = async (webRequestUrlObject) => {
