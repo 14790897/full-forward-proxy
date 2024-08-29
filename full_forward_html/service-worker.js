@@ -14,13 +14,17 @@ self.addEventListener('fetch', (event) => {
 	event.respondWith(
 		(async function () {
 			const webRequestUrlObject = new URL(event.request.url); // 用户请求的完整链接,这个链接可能encode也可能没有
-			if (webRequestUrlObject.pathname === '/' || webRequestUrlObject.pathname === '/service-worker.js') {
+			if (
+				webRequestUrlObject.pathname === '/' ||
+				webRequestUrlObject.pathname === '/service-worker.js' ||
+				webRequestUrlObject.pathname === '/favicon.ico'
+			) {
 				return fetch(event.request); // 直接传递给worker
 			} else if (
 				!(
-					webRequestUrlObject.protocol === 'chrome-extension:' ||
-					webRequestUrlObject.protocol === 'about:' ||
-					webRequestUrlObject.href.includes('_next')
+					(webRequestUrlObject.protocol === 'chrome-extension:' || webRequestUrlObject.protocol === 'about:')
+					// ||
+					// webRequestUrlObject.href.includes('_next')
 				)
 				//   webRequestUrlObject.href.includes("clarity") ||
 				//   webRequestUrlObject.href.includes("analytics")
@@ -46,7 +50,12 @@ self.addEventListener('fetch', (event) => {
 
 						const redirectUrl = new URL(reconstructedUrl);
 						const redirectResponse = Response.redirect(redirectUrl, 308);
-						console.log('请求的域名不包含完整的 URL,同时它是以我的网站的域名开头,redirectUrl:', redirectUrl.href);
+						console.log(
+							'请求的路径不包含完整的 URL,同时它是以我的网站的域名开头,redirectUrl:',
+							redirectUrl.href,
+							'原始请求URL:',
+							webRequestUrlObject.href
+						);
 						return redirectResponse;
 					} else {
 						console.log(`No last requested domain available. webRequestUrlObject: ${webRequestUrlObject.href}`);
@@ -56,21 +65,26 @@ self.addEventListener('fetch', (event) => {
 				// 如果请求的域名不以myWebsiteDomain开头，说明他请求了外部的服务同时那个服务是一个完整的链接，则加上前缀，使得可以代理, 同时我认为这个不是主要的网页所以不将它加入域名的缓存中
 				if (!webRequestUrlObject.href.startsWith(myWebsiteDomain)) {
 					const modifiedUrl = `${prefix}${webRequestUrlObject.href}`;
-					console.log('URl未被代理,已修改：modifiedUrl:', modifiedUrl, '原始originRequestUrl:', webRequestUrlObject.href);
+					console.log('URl未被代理,已修改:', modifiedUrl, '原始请求URL:', webRequestUrlObject.href);
 					// 这里重定向到新的 URL，暂时不使用
 					const redirectUrl = new URL(modifiedUrl);
 					const redirectResponse = Response.redirect(redirectUrl, 308);
-					// console.log('请求的域名不以myWebsiteDomain开头,redirectUrl:', redirectUrl.href);
 					return redirectResponse;
-				} else {
-					console.log('未修改,说明这个链接已经符合代理格式：', webRequestUrlObject.href);
-					const response = await fetch(event.request);
-					// 检查响应的 Content-Type 是否为 text/html
-					if (response.headers.get('Content-Type')?.includes('text/html')) {
-						await getUrlOriginPutCache(webRequestUrlObject);
-					}
-					return response;
 				}
+				console.log(
+					'未修改,链接已经符合代理格式：',
+					webRequestUrlObject.href
+					// 'startsWithmyWebsiteDomain:',
+					// webRequestUrlObject.href.startsWith(myWebsiteDomain),
+					// 'pathname:',
+					// webRequestUrlObject.pathname
+				);
+				const response = await fetch(event.request);
+				// 检查响应的 Content-Type 是否为 text/html
+				if (response.headers.get('Content-Type')?.includes('text/html')) {
+					await getUrlOriginPutCache(webRequestUrlObject);
+				}
+				return response;
 			} else {
 				// 如果请求是 chrome-extension: 或 about: 协议的，直接返回原始请求的结果
 				console.log('不需要代理的请求：', webRequestUrlObject.href);
