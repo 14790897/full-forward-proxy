@@ -1,77 +1,183 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Proxy Server with History</title>
+		<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
 		<style>
 			body {
-				background-color: #fbfbfb;
-				font-family: Arial, sans-serif;
+				background-color: #f4f7f9;
+				font-family: 'Roboto', sans-serif;
+				margin: 0;
+				padding: 0;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				height: 100vh;
+				color: #333;
 			}
 
-			h1 {
-				text-align: center;
-				color: #444;
+			h1,
+			h2 {
+				color: #333;
+				margin: 0.5rem 0;
 			}
 
 			.container {
-				display: flex;
-				flex-direction: column;
-				justify-content: center;
-				align-items: center;
-				height: 100vh;
-			}
-
-			form {
-				background-color: white;
-				box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+				width: 100%;
+				max-width: 400px;
+				background-color: #fff;
 				padding: 2rem;
 				border-radius: 8px;
+				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+				text-align: center;
 			}
 
 			input {
-				display: block;
-				width: 100%;
-				font-size: 18px;
-				padding: 15px;
-				border: solid 1px #ccc;
-				border-radius: 4px;
+				width: calc(100% - 2rem);
+				padding: 1rem;
 				margin: 1rem 0;
+				font-size: 16px;
+				border: 1px solid #ccc;
+				border-radius: 4px;
+				box-sizing: border-box;
 			}
 
 			button {
-				padding: 15px;
-				background-color: #0288d1;
+				width: 100%;
+				padding: 1rem;
+				font-size: 16px;
+				background-color: #007bff;
 				color: white;
-				font-size: 18px;
 				border: none;
 				border-radius: 4px;
 				cursor: pointer;
-				width: 100%;
+				transition: background-color 0.3s;
 			}
 
 			button:hover {
-				background-color: #039be5;
+				background-color: #0056b3;
+			}
+
+			.donation {
+				margin-top: 1.5rem;
+				font-size: 14px;
+				color: #555;
+			}
+
+			.donation strong {
+				color: #000;
+			}
+
+			footer {
+				margin-top: 2rem;
+				font-size: 12px;
+				color: #777;
+				text-align: center;
+			}
+
+			footer a {
+				color: #007bff;
+				text-decoration: none;
+			}
+
+			footer a:hover {
+				text-decoration: underline;
+			}
+
+			.history-list {
+				margin-top: 1.5rem;
+				text-align: left;
+			}
+
+			.history-list ul {
+				list-style-type: none;
+				padding: 0;
+			}
+
+			.history-list li {
+				background-color: #fff;
+				padding: 0.5rem 1rem;
+				border-radius: 4px;
+				margin-bottom: 0.5rem;
+				cursor: pointer;
+				transition: background-color 0.3s;
+			}
+
+			.history-list li:hover {
+				background-color: #f0f0f0;
 			}
 		</style>
-		<meta charset="UTF-8" />
-		<title>代理服务器</title>
 	</head>
 	<body>
-		<h1>输入您想访问的网址</h1>
-		<form id="proxy-form">
-			<input type="text" id="url" name="url" value="https://github.com/14790897" placeholder="https://example.com" required />
-			<button type="submit">访问</button>
-		</form>
-		<h2>cf免费额度有限，请捐点钱让我开启cf付费模式：0x1c8f58901c6FCbbB9c2CB89405dCD6027c3f80Bd</h2>
-		<h2>CF's free quota is limited, please donate some money so I can enable the paid mode of CF: 0x1c8f58901c6FCbbB9c2CB89405dCD6027c3f80Bd</h2>
+		<div class="container">
+			<h1>输入您想访问的网址enter website</h1>
+			<form id="proxy-form">
+				<input type="text" id="url" name="url" placeholder="https://github.com/14790897" value="https://github.com/14790897" required />
+				<button type="submit">访问visit</button>
+			</form>
+			<div class="history-list">
+				<h2>访问历史history:</h2>
+				<ul id="history"></ul>
+			</div>
+			<div class="donation">
+				<p>cf免费额度有限，请捐点钱让我开启cf付费模式：</p>
+				<p><strong>0x1c8f58901c6FCbbB9c2CB89405dCD6027c3f80Bd</strong></p>
+				<p>CF's free quota is limited, please donate:</p>
+				<p><strong>0x1c8f58901c6FCbbB9c2CB89405dCD6027c3f80Bd</strong></p>
+			</div>
+		</div>
+		<footer>
+			<p>Developed by <a href="https://github.com/14790897" target="_blank" rel="noopener">14790897</a></p>
+			<!-- <p>Powered by <a href="https://cloudflare.com" target="_blank" rel="noopener">Cloudflare</a></p> -->
+		</footer>
 		<script>
 			const form = document.getElementById('proxy-form');
+			const historyList = document.getElementById('history');
+        	const urlInput = document.getElementById('url');
+
+			// 初始化历史记录
+			const history = JSON.parse(localStorage.getItem('history')) || [];
+			       // 如果有历史记录，将第一条历史记录设置为输入框的值
+			if (history.length > 0) {
+				urlInput.value = history[0];
+			}
+			renderHistory();
+
 			form.addEventListener('submit', (event) => {
 				event.preventDefault();
 				const input = document.getElementById('url');
-				const actualUrl = input.value;
-				const proxyUrl = '/' + actualUrl;
-				location.href = proxyUrl;
+				const actualUrl = input.value.trim();
+
+				if (actualUrl) {
+					updateHistory(actualUrl);
+					const proxyUrl = '/' + actualUrl;
+					window.location.href = proxyUrl;
+				}
 			});
+
+			function updateHistory(url) {
+				// 更新历史记录，确保相同的网址不会重复
+				let updatedHistory = history.filter((item) => item !== url);
+				updatedHistory = [url, ...updatedHistory];
+				localStorage.setItem('history', JSON.stringify(updatedHistory));
+				renderHistory();
+			}
+
+			function renderHistory() {
+				historyList.innerHTML = '';
+				history.forEach((url) => {
+					const li = document.createElement('li');
+					li.textContent = url;
+					li.addEventListener('click', () => {
+						updateHistory(url);
+						window.location.href = '/' + url;
+					});
+					historyList.appendChild(li);
+				});
+			}
 			// 注册service  worker
 			if ('serviceWorker' in navigator) {
 				navigator.serviceWorker
