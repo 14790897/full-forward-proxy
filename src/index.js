@@ -8,7 +8,7 @@ async function handle(event) {
 	try {
 		const request = event.request;
 		const requestUrlObject = new URL(request.url);
-    	const prefix = `${requestUrlObject.origin}/`;
+		const prefix = `${requestUrlObject.origin}/`;
 
 		if (requestUrlObject.pathname === '/' || requestUrlObject.pathname === '/service-worker.js') {
 			//首页处理
@@ -79,8 +79,10 @@ async function handle(event) {
 		modifiedResponse.headers.set('X-Frame-Options', 'ALLOWALL');
 		modifiedResponse.headers.set('Access-Control-Allow-Origin', '*');
 		// 使用一个cookie来记录当前访问的网站
-		const currentSiteCookie = `current_site=${encodeURIComponent(actualUrl.origin)}; Path=/;  Secure`;
-		modifiedResponse.headers.append('Set-Cookie', currentSiteCookie);
+		if (response.headers.get('Content-Type')?.includes('text/html')) {
+			const currentSiteCookie = `current_site=${encodeURIComponent(actualUrl.origin)}; Path=/;  Secure`;
+			modifiedResponse.headers.append('Set-Cookie', currentSiteCookie);
+		}
 		return modifiedResponse;
 	} catch (e) {
 		let pathname = new URL(event.request.url).pathname;
@@ -117,7 +119,34 @@ async function updateRelativeUrls(response, baseUrl, prefix) {
 		// 都不匹配就原样返回
 		return match;
 	});
+	// 在 <head> 中插入 Service Worker 注册代码
+	const swRegistrationScript = `
+        <script>
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
+                    console.log('Service Worker registered with scope:', registration.scope);
+                }).catch(function(error) {
+                    console.log('Service Worker registration failed:', error);
+                });
+            }
+        </script>
+    `;
 
+	// 将 Service Worker 注册代码插入到 <head> 标签之前
+	text = text.replace('</head>', `${swRegistrationScript}</head>`);
+	const analyticsScript = `
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-N5PKF1XT49"></script>
+		<script>
+			window.dataLayer = window.dataLayer || [];
+			function gtag() {
+				dataLayer.push(arguments);
+			}
+			gtag('js', new Date());
+
+			gtag('config', 'G-N5PKF1XT49');
+		</script>
+	`;
+	text = text.replace('</body>', `${analyticsScript}</body>`);
 	return new Response(text, {
 		headers: response.headers,
 	});
