@@ -1,14 +1,21 @@
 // 网站的作用是通过我的网站域名加上需要代理的网址的完整链接，使得这个网址的流量全部经过我的网站给后端请求进行代理然后再返回给前端
-//但是我认为service worker的强大能力足以把所有链接都替换成所需的格式，应该是不需要我在客户端进行替换，所以它那个页面的脚本阻止了默认的链接打开方式
+//但是我认为service worker的强大能力足以把所有链接都替换成所需的格式，应该是不需要我在客户端进行替换，所以它那个页面的脚本阻止了默认的链接打开方式，然后windows.location的相对路径也不需要处理，这个sw可以代理，推测油管使用了history，但并不是
 // import { replaceWindowLocation, replaceLinks } from './utils.js';
 // test: console.log(window.proxyLocation.href);
 //window.proxyLocation.href = "/watch?v=YaZ5eV9BEX8";
 
-
 export function initProxy() {
 	try {
 		console.log('Proxy initialized...');
+		document.addEventListener('click', (event) => {
+			const target = event.target.closest('a');
+			if (target && !target.href.startsWith(prefix)) {
+				event.preventDefault(); // 阻止默认跳转行为
+				window.proxyLocation.href = target.href; // 使用代理跳转
+			}
+		});
 		let baseURL, prefix, currentSite;
+		let lastUrl = window.location.href;
 
 		// 获取 cookies
 		const cookie = document.cookie;
@@ -27,8 +34,38 @@ export function initProxy() {
 		} else {
 			throw new Error('No current_site in cookie');
 		}
+		interceptHistory(baseURL, prefix); // 添加 history 拦截
 
-		// 创建 MutationObserver 实例
+		document.addEventListener('click', (event) => {// 但是现在大多数也没用这个都检测不到
+			// 确保链接点击后的 URL 变化已经完成
+			setTimeout(() => {
+				let myWebsiteURL = new URL(window.location.href);
+				if (window.location.href !== lastUrl) {
+					lastUrl = window.location.href;
+					if (!myWebsiteURL.pathname.startsWith('http')) {
+						console.log('这个时候路径是不对的，需要刷新页面');
+						location.reload(); // 刷新页面
+					} else {
+						console.log('路径正确:', window.location.href);
+					}
+				}
+			}, 100); // 100ms 延迟，确保 URL 变化已经生效
+		});
+		setInterval(() => {
+			if (window.location.href !== lastUrl) {
+				lastUrl = window.location.href;
+				let myWebsiteURL = new URL(window.location.href);
+				if (!myWebsiteURL.pathname.startsWith('http')) {
+					console.log('这个时候路径是不对的，需要刷新页面');
+					location.reload(); // 刷新页面
+				} else {
+					console.log('路径正确:', window.location.href);
+				}
+				console.log('URL changed to', lastUrl);
+			} else {
+				console.log('URL not changed:', window.location.href);
+			}
+		}, 300); // 每300毫秒检查一次
 		const observer = new MutationObserver((mutationsList) => {
 			mutationsList.forEach((mutation) => {
 				if (mutation.type === 'childList') {
@@ -46,7 +83,6 @@ export function initProxy() {
 			});
 		});
 
-		// 监控整个 document 的所有子节点
 		observer.observe(document, {
 			childList: true,
 			subtree: true,
@@ -59,7 +95,6 @@ export function initProxy() {
 			// replaceLinks(script, baseURL, prefix);
 		});
 
-		// 创建 Proxy 对象，代理 location 对象
 		const locationProxy = new Proxy(window.location, {
 			get(target, prop) {
 				if (prop === 'href') {
@@ -69,7 +104,7 @@ export function initProxy() {
 						modifiedHref = modifiedHref.slice(prefix.length);
 					}
 					if (!modifiedHref.startsWith('http')) {
-						modifiedHref = currentSite +'/'+ modifiedHref;
+						modifiedHref = currentSite + '/' + modifiedHref;
 					}
 					console.log('访问 href:', modifiedHref, '原始href:', target.href);
 					return modifiedHref;
@@ -81,7 +116,8 @@ export function initProxy() {
 					let newValue = value;
 					if (!value.startsWith(prefix) && value.startsWith('http')) {
 						newValue = prefix + value;
-					} else if (!value.startsWith('http')) { //相对路径这里一般是以/开头
+					} else if (!value.startsWith('http')) {
+						//相对路径这里一般是以/开头
 						newValue = baseURL + value;
 					}
 					console.log('设置 href 为:', newValue, '原始href:', value);
@@ -94,18 +130,47 @@ export function initProxy() {
 		Object.defineProperty(window, 'proxyLocation', {
 			get: () => locationProxy,
 			set: (value) => {
-				let newValue = value;
-				if (!value.startsWith(prefix)) {
-					newValue = prefix + value;
-				}
 				// 使用 locationProxy 代理来设置 href
-				locationProxy.href = newValue;
+				locationProxy.href = value;
 			},
 		});
 	} catch (error) {
 		console.error('Error initializing proxy:', error);
 	}
 }
+
+export function interceptHistory(baseURL, prefix) {
+	const originalPushState = history.pushState;
+	const originalReplaceState = history.replaceState;
+
+	history.pushState = function (state, title, url) {
+		if (!url.startsWith(prefix) && url.startsWith('http')) {
+			url = prefix + url;
+		} else if (!url.startsWith('http')) {
+			url = baseURL + url;
+		}
+		console.log('pushState called:', { state, title, url });
+		// 正确传递参数
+		return originalPushState.apply(history, [state, title, url]);
+	};
+
+	history.replaceState = function (state, title, url) {
+		if (!url.startsWith(prefix) && url.startsWith('http')) {
+			url = prefix + url;
+		} else if (!url.startsWith('http')) {
+			url = baseURL + url;
+		}
+		console.log('replaceState called:', { state, title, url });
+		// 正确传递参数
+		return originalReplaceState.apply(history, [state, title, url]);
+	};
+
+	// 监听 popstate 事件
+	window.addEventListener('popstate', function (event) {
+		console.log('popstate event triggered:', event.state);
+	});
+}
+
 export function replaceWindowLocation(node) {
 	if (node.innerHTML.includes('window.location')) {
 		node.innerHTML = node.innerHTML.replace(/window\.location/g, 'window.proxyLocation');
