@@ -18,16 +18,12 @@ self.addEventListener('fetch', (event) => {
 			if (
 				webRequestUrlObject.pathname === '/' ||
 				webRequestUrlObject.pathname === '/service-worker.js' ||
-				webRequestUrlObject.pathname === '/favicon.ico'
+				webRequestUrlObject.pathname === '/favicon.ico' ||
+				webRequestUrlObject.protocol === 'chrome-extension:' ||
+				webRequestUrlObject.protocol === 'about:'
 			) {
-				return fetch(event.request); // 直接传递给worker
-			} else if (
-				!(
-					(webRequestUrlObject.protocol === 'chrome-extension:' || webRequestUrlObject.protocol === 'about:')
-					// ||
-					// webRequestUrlObject.href.includes('_next')
-				)
-			) {
+				return fetch(event.request); // 直接转发，不修改
+			} else {
 				const myWebsiteDomain = new URL(self.location.href).origin; // 我的网站的域名的域名（也就是我的代理网站）
 				const prefix = `${myWebsiteDomain}/`;
 
@@ -69,6 +65,7 @@ self.addEventListener('fetch', (event) => {
 					const redirectResponse = Response.redirect(redirectUrl, 308);
 					return redirectResponse;
 				}
+				// 捕获其他之前未处理的请求
 				console.log('未修改,链接已经符合代理格式：', webRequestUrlObject.href);
 				const response = await fetch(event.request);
 				// 检查响应的 Content-Type 是否为 text/html
@@ -76,10 +73,6 @@ self.addEventListener('fetch', (event) => {
 					await getUrlOriginPutCache(webRequestUrlObject);
 				}
 				return response;
-			} else {
-				// 如果请求是 chrome-extension: 或 about: 协议的，直接返回原始请求的结果
-				console.log('不需要代理的请求：', webRequestUrlObject.href);
-				return fetch(event.request);
 			}
 		})()
 	);
