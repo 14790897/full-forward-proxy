@@ -1,4 +1,4 @@
-// public/service-worker.js
+// frontend/service-worker.js
 // 网站的作用是通过我的网站域名加上需要代理的网址的完整链接，使得这个网址的流量全部经过我的网站给后端请求进行代理然后再返回给前端
 // sw可以拦截所有来自本域名的请求，sw不能读取cookie：https://stackoverflow.com/questions/59087642/reading-request-headers-inside-a-service-worker
 self.addEventListener('install', (event) => {
@@ -12,7 +12,19 @@ self.addEventListener('activate', (event) => {
 });
 
 // 定义不需要处理的路径和协议
-const excludedPaths = ['/', '/service-worker.js', '/favicon.ico', '/util.js'];
+const excludedPaths = [
+	'/',
+	'/service-worker.js',
+	'/favicon.ico',
+	'/util.js',
+	'/android-chrome-192x192.png',
+	'/android-chrome-512x512.png',
+	'/apple-touch-icon.png',
+	'/favicon-16x16.png',
+	'/favicon-32x32.png',
+	'/manifest.json',
+	'site.webmanifest',
+];
 const excludedProtocols = ['chrome-extension:', 'about:'];
 
 self.addEventListener('fetch', (event) => {

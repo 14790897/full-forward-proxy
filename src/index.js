@@ -4,14 +4,26 @@ import { initProxy, replaceWindowLocation, replaceLinks } from './client.js';
 addEventListener('fetch', (event) => {
 	event.respondWith(handle(event));
 });
-
+const excludedPaths = [
+	'/',
+	'/service-worker.js',
+	'/favicon.ico',
+	'/util.js',
+	'/android-chrome-192x192.png',
+	'/android-chrome-512x512.png',
+	'/apple-touch-icon.png',
+	'/favicon-16x16.png',
+	'/favicon-32x32.png',
+	'/manifest.json',
+	'site.webmanifest',
+];
 async function handle(event) {
 	try {
 		const request = event.request;
-		const requestUrlObject = new URL(request.url);
-		const prefix = `${requestUrlObject.origin}/`;
+		const webRequestUrlObject = new URL(request.url);
+		const prefix = `${webRequestUrlObject.origin}/`;
 
-		if (requestUrlObject.pathname === '/' || requestUrlObject.pathname === '/service-worker.js') {
+		if (excludedPaths.includes(webRequestUrlObject.pathname)) {
 			//首页处理
 			return handleEvent(event);
 			// 将请求代理到 Cloudflare Pages 部署的网站
@@ -19,7 +31,7 @@ async function handle(event) {
 			// return fetch(pagesUrl);
 		}
 		let actualUrlStr;
-		if (!requestUrlObject.pathname.startsWith('/http')) {
+		if (!webRequestUrlObject.pathname.startsWith('/http')) {
 			//从cookie中读取之前访问的网站，设置actualUrlStr
 			const cookie = request.headers.get('Cookie');
 			if (cookie) {
@@ -31,7 +43,7 @@ async function handle(event) {
 				);
 				if (cookieObj.current_site) {
 					actualUrlStr =
-						decodeURIComponent(cookieObj.current_site) + requestUrlObject.pathname + requestUrlObject.search + requestUrlObject.hash;
+						decodeURIComponent(cookieObj.current_site) + webRequestUrlObject.pathname + webRequestUrlObject.search + webRequestUrlObject.hash;
 					console.log('actualUrlStr in cookieObj:', actualUrlStr);
 					const actualUrl = new URL(actualUrlStr);
 					const redirectUrl = `${prefix}${actualUrl}`;
@@ -53,7 +65,7 @@ async function handle(event) {
 			}
 		} else {
 			// 例如https://14790897.xyz/https://youtube.com 会访问 https://youtube.com
-			actualUrlStr = requestUrlObject.pathname.replace('/', '') + requestUrlObject.search + requestUrlObject.hash; //使用的只有pathname
+			actualUrlStr = webRequestUrlObject.pathname.replace('/', '') + webRequestUrlObject.search + webRequestUrlObject.hash; //使用的只有pathname
 		}
 		const actualUrlObject = new URL(actualUrlStr);
 		console.log('actualUrlStr:', actualUrlStr);
