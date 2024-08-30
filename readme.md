@@ -4,7 +4,7 @@
 
 ## 使用方法
 
-1. 在任意 url 前面加上 https://你的域名/ 例如 https://future.paperai.life/https://github.com/14790897
+1. 在任意 url 前面加上 https://部署域名/ 例如 https://future.paperai.life/https://github.com/14790897
 
 ## 自己搭建步骤
 
@@ -35,7 +35,7 @@ https://future.paperai.life
 
 https://file.paperai.life/%E6%97%A0%E4%BB%A3%E7%90%86%E5%9B%BD%E5%86%85%E8%AE%BF%E9%97%AEpornhub%E6%96%B9%E6%B3%95.mp4
 
-## 参考项目:
+## 参考项目
 
 https://github.com/gaboolic/cloudflare-reverse-proxy
 

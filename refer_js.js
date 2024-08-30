@@ -1,25 +1,30 @@
+const str = '/';
+const proxyCookie = '__PROXY_VISITEDSITE__';
+const replaceUrlObj = '__location____';
+var thisProxyServerUrlHttps;
+var thisProxyServerUrl_hostOnly;
 //information
-var now = new URL(window.location.href);
-var base = now.host;
-var protocol = now.protocol;
-var nowlink = protocol + '//' + base + '/';
-var oriUrlStr = window.location.href.substring(nowlink.length);
+var myWebsiteURLObject = new URL(window.location.href);
+var myWebsiteHost = myWebsiteURLObject.host;
+var myWebsiteProtocol = myWebsiteURLObject.protocol;
+var prefix = myWebsiteURLObject.origin + '/';
+var oriUrlStr = window.location.href.substring(prefix.length);
 var oriUrl = new URL(oriUrlStr);
 
-var path = now.pathname.substring(1);
+var path = myWebsiteURLObject.pathname.substring(1);
 console.log('***************************----' + path);
 if (!path.startsWith('http')) path = 'https://' + path;
 
-var original_host = path.substring(path.indexOf('://') + '://'.length);
-original_host = original_host.split('/')[0];
-var mainOnly = path.substring(0, path.indexOf('://')) + '://' + original_host + '/';
+var original_host = path.substring(path.indexOf('://') + '://'.length); //用于找到要代理的网站的完整链接，不带https
+original_host = original_host.split('/')[0]; //这里其实是在找去掉了pathname但是它其实可以先转换成URL再取，方便
+var mainOnly = path.substring(0, path.indexOf('://')) + '://' + original_host + '/'; //有https没有path的，最后有/
 
 //*************************************************************************************************************
 function changeURL(relativePath) {
 	try {
-		if (relativePath && relativePath.startsWith(nowlink)) relativePath = relativePath.substring(nowlink.length);
-		if (relativePath && relativePath.startsWith(base + '/')) relativePath = relativePath.substring(base.length + 1);
-		if (relativePath && relativePath.startsWith(base)) relativePath = relativePath.substring(base.length);
+		if (relativePath && relativePath.startsWith(prefix)) relativePath = relativePath.substring(prefix.length);
+		if (relativePath && relativePath.startsWith(myWebsiteHost + '/')) relativePath = relativePath.substring(myWebsiteHost.length + 1);
+		if (relativePath && relativePath.startsWith(myWebsiteHost)) relativePath = relativePath.substring(myWebsiteHost.length);
 	} catch {
 		//ignore
 	}
@@ -29,17 +34,17 @@ function changeURL(relativePath) {
 		absolutePath = absolutePath.replace(encodeURI(window.location.href), path);
 		absolutePath = absolutePath.replace(encodeURIComponent(window.location.href), path);
 
-		absolutePath = absolutePath.replace(nowlink, mainOnly);
-		absolutePath = absolutePath.replace(nowlink, encodeURI(mainOnly));
-		absolutePath = absolutePath.replace(nowlink, encodeURIComponent(mainOnly));
+		absolutePath = absolutePath.replace(prefix, mainOnly);
+		absolutePath = absolutePath.replace(prefix, encodeURI(mainOnly));
+		absolutePath = absolutePath.replace(prefix, encodeURIComponent(mainOnly));
 
-		absolutePath = absolutePath.replace(nowlink, mainOnly.substring(0, mainOnly.length - 1));
-		absolutePath = absolutePath.replace(nowlink, encodeURI(mainOnly.substring(0, mainOnly.length - 1)));
-		absolutePath = absolutePath.replace(nowlink, encodeURIComponent(mainOnly.substring(0, mainOnly.length - 1)));
+		absolutePath = absolutePath.replace(prefix, mainOnly.substring(0, mainOnly.length - 1));
+		absolutePath = absolutePath.replace(prefix, encodeURI(mainOnly.substring(0, mainOnly.length - 1)));
+		absolutePath = absolutePath.replace(prefix, encodeURIComponent(mainOnly.substring(0, mainOnly.length - 1)));
 
-		absolutePath = absolutePath.replace(base, original_host);
+		absolutePath = absolutePath.replace(myWebsiteHost, original_host);
 
-		absolutePath = nowlink + absolutePath;
+		absolutePath = prefix + absolutePath;
 		return absolutePath;
 	} catch (e) {
 		console.log(path + '   ' + relativePath);
@@ -243,15 +248,15 @@ function historyInject() {
 	const originalReplaceState = History.prototype.replaceState;
 
 	History.prototype.pushState = function (state, title, url) {
-		var u = new URL(url, now.href).href;
+		var u = new URL(url, myWebsiteURLObject.href).href;
 		return originalPushState.apply(this, [state, title, u]);
 	};
 	History.prototype.replaceState = function (state, title, url) {
 		console.log('****************************************************************************');
-		console.log(nowlink);
+		console.log(prefix);
 		console.log(url);
-		console.log(now.href);
-		var u = new URL(url, now.href).href;
+		console.log(myWebsiteURLObject.href);
+		var u = new URL(url, myWebsiteURLObject.href).href;
 		console.log(u);
 		return originalReplaceState.apply(this, [state, title, u]);
 	};
@@ -296,7 +301,7 @@ function covToAbs(element) {
 	}
 
 	// Check and update the attribute if necessary
-	if (setAttr !== '' && relativePath.indexOf(nowlink) != 0) {
+	if (setAttr !== '' && relativePath.indexOf(prefix) != 0) {
 		if (!relativePath.includes('*')) {
 			if (
 				!relativePath.startsWith('data:') &&
