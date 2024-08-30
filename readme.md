@@ -1,11 +1,10 @@
 # full-forward-proxy
 
-本项目尽全力将网页上的内容全部通过 CF Worker 进行代理, 目前发现对谷歌，油管不适配
+本项目尽全力将网页上的内容全部通过 CF Worker 进行代理, 油管，pornhub可用，且并没有针对任何网站的特殊规则
 
 ## 使用方法
 
-1. 访问域名主页，如我部署的https://future.paperai.life ，自动安装 service worker
-2. 在任意 url 前面加上 https://你的域名/ 例如 https://future.paperai.life/https://github.com/14790897
+1. 在任意 url 前面加上 https://你的域名/ 例如 https://future.paperai.life/https://github.com/14790897
 
 ## 自己搭建步骤
 
