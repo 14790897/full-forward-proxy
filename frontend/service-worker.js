@@ -45,7 +45,7 @@ self.addEventListener('fetch', (event) => {
 						const cache = await caches.open('full-proxy-cache');
 						const cachedResponse = await cache.match('lastRequestedDomain');
 						let lastRequestedDomain = cachedResponse ? await cachedResponse.text() : null;
-						console.log('lastRequestedDomain:', lastRequestedDomain);
+						// console.log('lastRequestedDomain:', lastRequestedDomain);
 
 						if (lastRequestedDomain) {
 							const reconstructedTrueUrl = `${decodeURIComponent(lastRequestedDomain)}${webRequestUrlObject.pathname}${
@@ -70,18 +70,23 @@ self.addEventListener('fetch', (event) => {
 					// 如果请求的域名不以myWebsiteDomain开头，说明他请求了外部的服务同时那个服务是一个完整的链接，则加上前缀，使得可以代理, 同时我认为这个不是主要的网页所以不将它加入域名的缓存中
 					if (!webRequestUrlObject.href.startsWith(myWebsiteDomain)) {
 						const modifiedUrl = `${prefix}${webRequestUrlObject.href}`;
-						console.log('URL未被添加前缀,已修改:', modifiedUrl, '原始请求URL:', webRequestUrlObject.href);
+						// console.log('URL未被添加前缀,已修改:', modifiedUrl, '原始请求URL:', webRequestUrlObject.href);
 						// 这里重定向到新的 URL，暂时不使用
 						const redirectUrl = new URL(modifiedUrl);
 						const redirectResponse = Response.redirect(redirectUrl, 308);
 						return redirectResponse;
 					}
 					// 捕获其他之前未处理的请求
-					console.log('未修改,链接已经符合代理格式：', webRequestUrlObject.href);
+					// console.log('未修改,链接已经符合代理格式：', webRequestUrlObject.href);
 					const response = await fetch(event.request);
+					let clonedResponse = response.clone();
 					// 检查响应的 Content-Type 是否为 text/html
 					if (response.headers.get('Content-Type')?.includes('text/html')) {
-						await getUrlOriginPutCache(webRequestUrlObject);
+						const text = await clonedResponse.text(); // 读取克隆的响应体
+						if (text.length > 1500) {
+							// 检查内容长度,因为我发现有些text页面它是没有内容的,所以这些请求需要忽略
+							await getUrlOriginPutCache(webRequestUrlObject);
+						}
 					}
 					return response;
 				}
