@@ -4,17 +4,10 @@
 
 ## 使用方法
 
-1. 访问域名主页，如我部署的https://future.paperai.life ，自动安装service worker
+1. 访问域名主页，如我部署的https://future.paperai.life ，自动安装 service worker
 2. 在任意 url 前面加上 https://你的域名/ 例如 https://future.paperai.life/https://github.com/14790897
 
 ## 自己搭建步骤
-
-<!-- 1. 创建 KV
-   ```sh
-   wrangler kv:namespace create full_forward
-   wrangler kv:key put --binding=full_forward  "/" ./full-forward-html/index.html
-   wrangler kv:key put --binding=full_forward  "/service-worker.js" ./full-forward-html/service-worker.js
-   ``` -->
 
 1. 克隆仓库并切换到仓库目录
 2. 部署到 cf （使用 wrangler）
@@ -43,4 +36,10 @@ https://future.paperai.life
 
 https://file.paperai.life/%E6%97%A0%E4%BB%A3%E7%90%86%E5%9B%BD%E5%86%85%E8%AE%BF%E9%97%AEpornhub%E6%96%B9%E6%B3%95.mp4
 
-## 参考项目: https://github.com/gaboolic/cloudflare-reverse-proxy
+## 参考项目:
+
+https://github.com/gaboolic/cloudflare-reverse-proxy
+
+## 许可证
+
+本项目基于 GNU Affero General Public License v3.0 发布。您可以自由地复制、分发和修改本项目，但修改后和衍生的作品必须同样以 AGPLv3 协议发布。有关详细信息，请参阅 LICENSE 文件或访问以下链接：https://www.gnu.org/licenses/agpl-3.0.en.html

@@ -27,8 +27,6 @@ self.addEventListener('fetch', (event) => {
 					// ||
 					// webRequestUrlObject.href.includes('_next')
 				)
-				//   webRequestUrlObject.href.includes("clarity") ||
-				//   webRequestUrlObject.href.includes("analytics")
 			) {
 				const myWebsiteDomain = new URL(self.location.href).origin; // 我的网站的域名的域名（也就是我的代理网站）
 				const prefix = `${myWebsiteDomain}/`;
