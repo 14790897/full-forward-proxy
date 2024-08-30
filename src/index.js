@@ -109,12 +109,12 @@ async function updateRelativeUrls(response, baseUrl, prefix) {
 	// 替换HTML中的相对路径
 	text = text.replace(/(href|src|action)="([^"]*?)"/g, (match, p1, p2) => {
 		// 替换不完整链接
-		if (!p2.includes('://') && !p2.startsWith('#')) {
-			// baseurl是前缀加上真实域名
+		if (!p2.startsWith('http') && !p2.startsWith('#')) {
+			// baseUrl 是前缀加上真实域名，用于相对路径
 			console.log(`${p1}="${baseUrl}${p2}"`);
 			return `${p1}="${baseUrl}${p2}"`;
-			// 替换https的完整链接
-		} else if (p2.includes('://')) {
+			// 替换以 http 或 https 开头的完整链接
+		} else if (p2.startsWith('http')) {
 			console.log(`${p1}="${prefix}${p2}"`);
 			return `${p1}="${prefix}${p2}"`;
 		}
@@ -136,8 +136,8 @@ async function updateRelativeUrls(response, baseUrl, prefix) {
 			const actualUrl = new URL(fullPath); // 使用路径创建一个新的 URL 对象
 			const origin = actualUrl.origin; // 提取 origin 部分
 			document.cookie = "current_site=" + encodeURIComponent(origin) + "; Path=/; Secure";
-		import { replaceWindowLocation, replaceLinks } from '/utils.js'; //从根目录加载
-        ${initProxy.toString()}
+		// import { replaceWindowLocation, replaceLinks } from '/utils.js'; //从根目录加载，但是utils重名了
+        ${initProxy.toString() + replaceWindowLocation.toString() + replaceLinks.toString()}//这里脚本之后改成使用cdn加载
 		initProxy(); // 这里调用 initProxy 函数
         </script>
     `;

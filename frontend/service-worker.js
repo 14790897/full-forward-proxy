@@ -74,7 +74,8 @@ self.addEventListener('fetch', (event) => {
 					return response;
 				}
 			} catch (error) {
-				console.error('通用Fetch failed', error, '请求URL:', webRequestUrlObject.href);
+				console.error('通用Fetch失败', error, '请求URL:', event.request.url);
+				return new Response('Proxy error occurred', { status: 500 });
 			}
 		})()
 	);
