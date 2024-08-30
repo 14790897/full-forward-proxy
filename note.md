@@ -6,7 +6,7 @@
 https://github.com/gaboolic/cloudflare-reverse-proxy
 https://github.com/BomberFish/Infrared
 https://github.com/netptop/siteproxy
-https://github.com/1234567Yang/cf-proxy-ex
+https://github.com/1234567Yang/cf-proxy-ex //这个效果不行
 https://github.com/fscarmen2/Argo-Xray-JS-PaaS
 https://github.com/playGitboy/YuFoLunChan/blob/main/%E4%B8%8E%E4%BD%9B%E8%AE%BA%E7%A6%85.py
 https://github.com/EtherDream/jsproxy

@@ -1,10 +1,14 @@
 // 网站的作用是通过我的网站域名加上需要代理的网址的完整链接，使得这个网址的流量全部经过我的网站给后端请求进行代理然后再返回给前端
+//但是我认为service worker的强大能力足以把所有链接都替换成所需的格式，应该是不需要我在客户端进行替换，所以它那个页面的脚本阻止了默认的链接打开方式
 // import { replaceWindowLocation, replaceLinks } from './utils.js';
+// test: console.log(window.proxyLocation.href);
+//window.proxyLocation.href = "/watch?v=YaZ5eV9BEX8";
+
 
 export function initProxy() {
 	try {
 		console.log('Proxy initialized...');
-		let baseURL, prefix;
+		let baseURL, prefix, currentSite;
 
 		// 获取 cookies
 		const cookie = document.cookie;
@@ -17,7 +21,8 @@ export function initProxy() {
 
 		if (cookieObj.current_site) {
 			prefix = location.origin + '/'; // 处理绝对路径情况, 前面需要有 /
-			baseURL = prefix + decodeURIComponent(cookieObj.current_site); // 处理相对路径的情况, 相对路径本身开头就有 / 所以不需要加
+			currentSite = decodeURIComponent(cookieObj.current_site);
+			baseURL = prefix + currentSite; // 处理相对路径的情况, 相对路径本身开头就有 / 所以不需要加
 			console.log('baseURL from cookieObj:', baseURL);
 		} else {
 			throw new Error('No current_site in cookie');
@@ -31,12 +36,12 @@ export function initProxy() {
 						if (node.nodeType === 1) {
 							// 1 表示元素节点
 							replaceWindowLocation(node);
-							replaceLinks(node, baseURL, prefix); // 添加链接替换的调用
+							// replaceLinks(node, baseURL, prefix); // 添加链接替换的调用
 						}
 					});
 				} else if (mutation.type === 'attributes') {
 					replaceWindowLocation(mutation.target);
-					replaceLinks(mutation.target, baseURL, prefix); // 添加链接替换的调用
+					// replaceLinks(mutation.target, baseURL, prefix); // 添加链接替换的调用
 				}
 			});
 		});
@@ -51,7 +56,7 @@ export function initProxy() {
 		// 初次加载时，替换页面上现有的 script 内容
 		document.querySelectorAll('script').forEach((script) => {
 			replaceWindowLocation(script);
-			replaceLinks(script, baseURL, prefix);
+			// replaceLinks(script, baseURL, prefix);
 		});
 
 		// 创建 Proxy 对象，代理 location 对象
@@ -59,9 +64,12 @@ export function initProxy() {
 			get(target, prop) {
 				if (prop === 'href') {
 					let modifiedHref = target.href;
-					// 如果 href 包含 prefix，移除 prefix
+					// 如果 href 包含 prefix，移除 prefix(应该是必定包含prefix)
 					if (modifiedHref.startsWith(prefix)) {
 						modifiedHref = modifiedHref.slice(prefix.length);
+					}
+					if (!modifiedHref.startsWith('http')) {
+						modifiedHref = currentSite +'/'+ modifiedHref;
 					}
 					console.log('访问 href:', modifiedHref, '原始href:', target.href);
 					return modifiedHref;
@@ -71,8 +79,10 @@ export function initProxy() {
 			set(target, prop, value) {
 				if (prop === 'href') {
 					let newValue = value;
-					if (!value.startsWith(prefix)) {
+					if (!value.startsWith(prefix) && value.startsWith('http')) {
 						newValue = prefix + value;
+					} else if (!value.startsWith('http')) { //相对路径这里一般是以/开头
+						newValue = baseURL + value;
 					}
 					console.log('设置 href 为:', newValue, '原始href:', value);
 					return Reflect.set(target, prop, newValue);
@@ -115,7 +125,7 @@ export function replaceLinks(node, baseUrl, prefix) {
 				if (attrValue.startsWith(prefix)) {
 					console.log(`${attr}="${originalValue}" already starts with prefix, no changes.`);
 				} else if (!attrValue.startsWith('http') && !attrValue.startsWith('#') && !attrValue.includes(':')) {
-					//如果没有最后一个条件，会触发'src was "blob:https://dev.paperai.life/b7570176-bcd1-48bd-acf5-7e7d0ee632ee", now set to "https://dev.paperai.life/https://www.youtube.comblob:https://dev.paperai.life/b7570176-bcd1-48bd-acf5-7e7d0ee632ee"'导致service worker无法代理，进一步导致无法播放视频
+					//如果没有最后一个条件，会触发'src was "blob:https://dev.paperai.life/b7570176-bcd1-48bd-acf5-7e7d0ee632ee", now set to "https://dev.paperai.life/https://www.youtube.comblob:https://dev.paperai.life/b7570176-bcd1-48bd-acf5-7e7d0ee632ee"'导致service worker无法代理，进一步导致无法播放视频,但是原始代码的网页中没找代理blob的信息
 					// 处理相对路径的情况
 					let newValue = `${baseUrl}${attrValue}`;
 					node.setAttribute(attr, newValue);
