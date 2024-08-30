@@ -1,6 +1,6 @@
 // todo 去掉Origin 和 Referer
 import { handleEvent } from './route.js';
-
+import { initProxy, replaceWindowLocation, replaceLinks } from './client.js';
 addEventListener('fetch', (event) => {
 	event.respondWith(handle(event));
 });
@@ -79,6 +79,12 @@ async function handle(event) {
 		modifiedResponse.headers.delete('Permissions-Policy');
 		modifiedResponse.headers.set('X-Frame-Options', 'ALLOWALL');
 		modifiedResponse.headers.set('Access-Control-Allow-Origin', '*');
+		modifiedResponse.headers.set('X-Frame-Options', 'ALLOWALL');
+		modifiedResponse.headers.delete('Strict-Transport-Security'); // 强制使用 HTTPS
+		modifiedResponse.headers.delete('X-Download-Options'); // 防止 IE 下载危险文件
+		modifiedResponse.headers.delete('X-Content-Type-Options'); // 防止 MIME 类型嗅探
+		modifiedResponse.headers.delete('Referrer-Policy'); // 控制引用头部的发送
+		modifiedResponse.headers.delete('Feature-Policy'); // 控制特定功能使用的权限
 		return modifiedResponse;
 	} catch (e) {
 		let pathname = new URL(event.request.url).pathname;
@@ -117,7 +123,7 @@ async function updateRelativeUrls(response, baseUrl, prefix) {
 	});
 	// 在 <head> 中插入 Service Worker 注册代码
 	const swRegistrationScript = `
-        <script>
+        <script type="module">
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
                     console.log('Service Worker registered with scope:', registration.scope);
@@ -130,6 +136,9 @@ async function updateRelativeUrls(response, baseUrl, prefix) {
 			const actualUrl = new URL(fullPath); // 使用路径创建一个新的 URL 对象
 			const origin = actualUrl.origin; // 提取 origin 部分
 			document.cookie = "current_site=" + encodeURIComponent(origin) + "; Path=/; Secure";
+		import { replaceWindowLocation, replaceLinks } from '/utils.js'; //从根目录加载
+        ${initProxy.toString()}
+		initProxy(); // 这里调用 initProxy 函数
         </script>
     `;
 

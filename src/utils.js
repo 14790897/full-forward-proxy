@@ -4,6 +4,7 @@ export function replaceWindowLocation(node) {
 		console.log('Replaced window.location with window.proxyLocation');
 	}
 }
+
 export function replaceLinks(node, baseUrl, prefix) {
 	if (node.nodeType === Node.ELEMENT_NODE) {
 		const attributesToReplace = ['href', 'src', 'action'];
@@ -24,4 +25,3 @@ export function replaceLinks(node, baseUrl, prefix) {
 		});
 	}
 }
-
