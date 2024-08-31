@@ -158,10 +158,10 @@ async function updateRelativeUrls(response, baseUrl, prefix) {
             console.log('current_site saved to cookie in index:', currentSite)
         }
     });
-			${initProxy.toString() + replaceWindowLocation.toString() + interceptHistory.toString()}//这里脚本之后改成使用cdn加载
-			initProxy(); // 这里调用 initProxy 函数
-        </script>
+	</script>
     `;
+	// ${initProxy.toString() + replaceWindowLocation.toString() + interceptHistory.toString()}//这里脚本之后改成使用cdn加载
+	// initProxy(); // 这里调用 initProxy 函数
 	// import { replaceWindowLocation, replaceLinks } from '/utils.js'; //从根目录加载，但是utils重名了
 
 	text = text.replace('</head>', `${swRegistrationScript}</head>`);
