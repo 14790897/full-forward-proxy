@@ -1,15 +1,15 @@
 # full-forward-proxy
 
-本项目尽全力将网页上的内容全部通过 CF Worker 进行代理, 油管，pornhub可用，且并没有针对任何网站的特殊规则
+本项目尽全力将网页上的内容全部通过 CF Worker 进行代理, 油管，pornhub 可用
 
 ## 使用方法
 
-1. 在任意 url 前面加上 https://部署域名/ 例如 https://future.paperai.life/https://github.com/14790897
+1. 在任意 url 前面加上 https://部署域名/ 例如 https://tomorrow.paperai.life/https://github.com/14790897
 
 ## 自己搭建步骤
 
 1. 克隆仓库并切换到仓库目录
-2. 部署到 cf （使用 wrangler）
+2. 部署到 cloud flare （使用 wrangler）
 
    ```sh
    npm install -g wrangler
@@ -18,7 +18,7 @@
    wrangler deploy
    ```
 
-3. 在 cf 上配置自定义域名（可选）
+3. 在 cloud flare 上配置自定义域名（可选）
 
 ## 功能
 
@@ -29,15 +29,15 @@
 
 ## 体验网址
 
-https://future.paperai.life
+https://tomorrow.paperai.life
+旧版：https://future.paperai.life
 
 ## 演示视频
 
-https://file.paperai.life/%E6%97%A0%E4%BB%A3%E7%90%86%E5%9B%BD%E5%86%85%E8%AE%BF%E9%97%AEpornhub%E6%96%B9%E6%B3%95.mp4
+https://www.youtube.com/watch?v=cJs7C6rQheA
+<!-- ## 参考项目
 
-## 参考项目
-
-https://github.com/gaboolic/cloudflare-reverse-proxy
+https://github.com/gaboolic/cloudflare-reverse-proxy -->
 
 ## 许可证
 
