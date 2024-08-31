@@ -1,3 +1,5 @@
+'use strict';
+
 // frontend/service-worker.js
 // 网站的作用是通过我的网站域名加上需要代理的网址的完整链接，使得这个网址的流量全部经过我的网站给后端请求进行代理然后再返回给前端
 // sw可以拦截所有来自本域名的请求，sw不能读取cookie：https://stackoverflow.com/questions/59087642/reading-request-headers-inside-a-service-worker
@@ -79,13 +81,13 @@ self.addEventListener('fetch', (event) => {
 					// 捕获其他之前未处理的请求
 					// console.log('未修改,链接已经符合代理格式：', webRequestUrlObject.href);
 					const response = await fetch(event.request);
-					let clonedResponse = response.clone();
-					// 检查响应的 Content-Type 是否为 text/html
+					// let clonedResponse = response.clone();
 					if (response.headers.get('Content-Type')?.includes('text/html')) {
-						const text = await clonedResponse.text(); // 读取克隆的响应体
+						// const text = await clonedResponse.text(); // 读取克隆的响应体
 						// if (text.length > 1500) {
 							// 检查内容长度,因为我发现有些text页面它是没有内容的,所以这些请求需要忽略
-							await getUrlOriginPutCache(webRequestUrlObject);
+						// await getUrlOriginPutCache(webRequestUrlObject);
+							await cacheActiveClientUrl();
 						// }
 					}
 					return response;
@@ -98,10 +100,50 @@ self.addEventListener('fetch', (event) => {
 	);
 });
 
-const getUrlOriginPutCache = async (webRequestUrlObject) => {
-	const actualUrlStr = webRequestUrlObject.pathname.replace('/', '') + webRequestUrlObject.search + webRequestUrlObject.hash;
-	const actualUrlObject = new URL(actualUrlStr);
-	const cache = await caches.open('full-proxy-cache');
-	await cache.put('lastRequestedDomain', new Response(encodeURIComponent(actualUrlObject.origin)));
-	console.log('lastRequestedDomain put in cache:', actualUrlObject.origin);
+// 用于获取当前活跃的客户端，并缓存其URL
+async function cacheActiveClientUrl() {
+	try {
+		const clientList = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+
+		// 初始化变量以存储当前活跃的客户端
+		let activeClient = null;
+
+		// 遍历所有客户端，寻找可见的（visible）客户端
+		for (const client of clientList) {
+			if (client.visibilityState === 'visible') {
+				activeClient = client;
+				break; // 找到后就停止循环
+			}
+		}
+
+		if (activeClient) {
+			try {
+				const clientUrlObject = new URL(activeClient.url);
+				const actualClientUrlStr = clientUrlObject.pathname.replace('/', '');
+				const actualClientUrlObject = new URL(actualClientUrlStr);
+				const currentSite = encodeURIComponent(actualClientUrlObject.origin);
+				await getUrlOriginPutCache(currentSite);
+				// 将当前站点发送到客户端
+				activeClient.postMessage({ currentSite });
+				console.log('User is currently on this page:', currentSite);
+			} catch (urlError) {
+				throw new Error(`Failed to construct URL from activeClient: ${activeClient.url}, error: ${urlError}`);
+			}
+		} else {
+			console.log('No active client found.');
+		}
+	} catch (error) {
+		// throw new Error(`Error in cacheActiveClientUrl: ${error}`);
+		console.log(`Error in cacheActiveClientUrl: ${error}`);
+	}
+}
+
+const getUrlOriginPutCache = async (currentSite) => {
+	try {
+		const cache = await caches.open('full-proxy-cache');
+		await cache.put('lastRequestedDomain', new Response(currentSite));
+		console.log('lastRequestedDomain put in cache:', currentSite);
+	} catch (error) {
+		throw new Error(`getUrlOriginPutCache failed: ${error}`);
+	}
 };

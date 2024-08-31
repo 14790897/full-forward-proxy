@@ -75,8 +75,12 @@ async function handle(event) {
 		const actualUrlObject = new URL(actualUrlStr);
 		console.log('actualUrlStr:', actualUrlStr);
 		const actualOrigin = actualUrlObject.origin;
+		// 克隆请求并移除 Origin 和 Referer 头
+		const newHeaders = new Headers(request.headers);
+		newHeaders.delete('Origin');
+		newHeaders.delete('Referer');
 		const modifiedRequest = new Request(actualUrlObject, {
-			headers: request.headers,
+			headers: newHeaders,
 			method: request.method,
 			body: request.body,
 			redirect: 'follow',
@@ -96,17 +100,17 @@ async function handle(event) {
 		modifiedResponse.headers.delete('Permissions-Policy');
 		modifiedResponse.headers.set('X-Frame-Options', 'ALLOWALL');
 		modifiedResponse.headers.set('Access-Control-Allow-Origin', '*');
-		// modifiedResponse.headers.delete('Strict-Transport-Security'); // 强制使用 HTTPS
-		// modifiedResponse.headers.delete('X-Download-Options'); // 防止 IE 下载危险文件
-		// modifiedResponse.headers.delete('X-Content-Type-Options'); // 防止 MIME 类型嗅探
-		// modifiedResponse.headers.delete('Referrer-Policy'); // 控制引用头部的发送
-		// modifiedResponse.headers.delete('Feature-Policy'); // 控制特定功能使用的权限
+		modifiedResponse.headers.delete('Strict-Transport-Security'); // 强制使用 HTTPS
+		modifiedResponse.headers.delete('X-Download-Options'); // 防止 IE 下载危险文件
+		modifiedResponse.headers.delete('X-Content-Type-Options'); // 防止 MIME 类型嗅探
+		modifiedResponse.headers.delete('Referrer-Policy'); // 控制引用头部的发送
+		modifiedResponse.headers.delete('Feature-Policy'); // 控制特定功能使用的权限
 		return modifiedResponse;
 	} catch (e) {
 		let pathname = new URL(event.request.url).pathname;
-		return new Response(`"${pathname}" not found, error:${e}`, {
-			status: 404,
-			statusText: 'not found',
+		return new Response(`"${pathname}", error:${e}`, {
+			status: 499,
+			statusText: 'error in full proxy, can not resolve',
 		});
 	}
 }
@@ -145,11 +149,15 @@ async function updateRelativeUrls(response, baseUrl, prefix) {
                 }).catch(function(error) {
                     console.log('Service Worker registration failed:', error);
                 });
-			// 设置 Cookie 为当前用户所在网站的域名
-          	const fullPath = location.pathname.replace('/', ''); // 获取路径部分并移除开头的 '/'
-			const actualUrl = new URL(fullPath); // 使用路径创建一个新的 URL 对象
-			const origin = actualUrl.origin; // 提取 origin 部分
-			if (origin){document.cookie = "current_site=" + encodeURIComponent(origin) + "; Path=/; Secure";}
+				 // 监听来自 Service Worker 的消息
+    navigator.serviceWorker.addEventListener('message', (event) => {
+        const currentSite = event.data.currentSite
+        if (currentSite) {
+            // 将 currentSite 存储到 cookie 中
+            document.cookie = "current_site="+ currentSite + "; path=/; Secure"//注意这里不需要再次编码，sw已经编码过了
+            console.log('current_site saved to cookie in index:', currentSite)
+        }
+    });
 			${initProxy.toString() + replaceWindowLocation.toString() + interceptHistory.toString()}//这里脚本之后改成使用cdn加载
 			initProxy(); // 这里调用 initProxy 函数
         </script>
