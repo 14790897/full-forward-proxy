@@ -27,14 +27,34 @@ export function initProxy() {
 		);
 
 		if (cookieObj.current_site) {
-			prefix = location.origin + '/'; // 处理绝对路径情况, 前面需要有 /
 			currentSite = decodeURIComponent(cookieObj.current_site);
+			prefix = location.origin + '/'; // 处理绝对路径情况, 前面需要有 /
 			baseURL = prefix + currentSite; // 处理相对路径的情况, 相对路径本身开头就有 / 所以不需要加
-			console.log('baseURL from cookieObj:', baseURL);
+			console.log('currentSite in client.js:', currentSite);
+			if (currentSite.includes('youtube')) {
+				// 对url监测
+				let lastUrl = window.location.href;
+				setInterval(() => {
+					if (window.location.href.slice(-5) !== lastUrl.slice(-5)) {
+						lastUrl = window.location.href;
+						let myWebsiteURL = new URL(window.location.href);
+						if (!myWebsiteURL.pathname.startsWith('http')) {
+							console.log('这个时候路径是不对的，需要刷新页面');
+							location.reload(); // 刷新页面
+						} else {
+							console.log('路径正确:', window.location.href);
+						}
+						console.log('URL changed to', lastUrl);
+					} else {
+						console.log('URL not changed:', window.location.href);
+					}
+				}, 300); // 每300毫秒检查一次
+			}
 		} else {
-			throw new Error('No current_site in cookie');
+			// throw new Error('No current_site in cookie');
+			console.error('No current_site in cookie');
 		}
-		interceptHistory(baseURL, prefix); // 添加 history 拦截
+		// interceptHistory(baseURL, prefix); // 添加 history 拦截  github处理有问题
 
 		const observer = new MutationObserver((mutationsList) => {
 			mutationsList.forEach((mutation) => {
@@ -96,14 +116,16 @@ export function initProxy() {
 				return Reflect.set(target, prop, value);
 			},
 		});
-
-		Object.defineProperty(window, 'proxyLocation', {
-			get: () => locationProxy,
-			set: (value) => {
-				// 使用 locationProxy 代理来设置 href
-				locationProxy.href = value;
-			},
-		});
+		if (!Object.prototype.hasOwnProperty.call(window, 'proxyLocation')) {
+			Object.defineProperty(window, 'proxyLocation', {
+				configurable: true, // 允许再次定义
+				get: () => locationProxy,
+				set: (value) => {
+					// 使用 locationProxy 代理来设置 href
+					locationProxy.href = value;
+				},
+			});
+		}
 	} catch (error) {
 		console.error('Error initializing proxy:', error);
 	}
@@ -114,26 +136,27 @@ export function interceptHistory(baseURL, prefix) {
 	const originalReplaceState = history.replaceState;
 
 	history.pushState = function (state, title, url) {
-		const urlStr = typeof url === 'string' ? url : url.toString();
-		if (!url.startsWith(prefix) && url.startsWith('http')) {
-			url = prefix + url;
-		} else if (!url.startsWith('http')) {
-			url = baseURL + url;
+		let urlStr = typeof url === 'string' ? url : url.toString();
+		if (!urlStr.startsWith(prefix) && urlStr.startsWith('http')) {
+			urlStr = prefix + urlStr;
+		} else if (!urlStr.startsWith('http')) {
+			urlStr = baseURL + urlStr;
 		}
-		console.log('pushState called:', { state, title, url });
+		console.log('pushState called:', { state, title, urlStr });
 		// 正确传递参数
-		return originalPushState.apply(history, [state, title, url]);
+		return originalPushState.apply(history, [state, title, urlStr]);
 	};
 
 	history.replaceState = function (state, title, url) {
-		if (!url.startsWith(prefix) && url.startsWith('http')) {
-			url = prefix + url;
-		} else if (!url.startsWith('http')) {
-			url = baseURL + url;
+		let urlStr = typeof url === 'string' ? url : url.toString();
+		if (!urlStr.startsWith(prefix) && urlStr.startsWith('http')) {
+			urlStr = prefix + urlStr;
+		} else if (!urlStr.startsWith('http')) {
+			urlStr = baseURL + urlStr;
 		}
-		console.log('replaceState called:', { state, title, url });
+		console.log('replaceState called:', { state, title, urlStr });
 		// 正确传递参数
-		return originalReplaceState.apply(history, [state, title, url]);
+		return originalReplaceState.apply(history, [state, title, urlStr]);
 	};
 
 	// 监听 popstate 事件
