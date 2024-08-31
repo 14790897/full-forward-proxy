@@ -3,7 +3,8 @@
 // import { replaceWindowLocation, replaceLinks } from './utils.js';
 // test: console.log(window.proxyLocation.href);
 //window.proxyLocation.href = "/watch?v=YaZ5eV9BEX8";
-
+// history测试：history.pushState({ someData: 123 }, 'Test Title', '/new-page'); history.replaceState({ someData: 456 }, 'Another Title', 'http://example.com/page');
+// todo document.url
 export function initProxy() {
 	try {
 		console.log('Proxy initialized...');
@@ -15,7 +16,6 @@ export function initProxy() {
 			}
 		});
 		let baseURL, prefix, currentSite;
-		let lastUrl = window.location.href;
 
 		// 获取 cookies
 		const cookie = document.cookie;
@@ -36,36 +36,6 @@ export function initProxy() {
 		}
 		interceptHistory(baseURL, prefix); // 添加 history 拦截
 
-		document.addEventListener('click', (event) => {// 但是现在大多数也没用这个都检测不到
-			// 确保链接点击后的 URL 变化已经完成
-			setTimeout(() => {
-				let myWebsiteURL = new URL(window.location.href);
-				if (window.location.href !== lastUrl) {
-					lastUrl = window.location.href;
-					if (!myWebsiteURL.pathname.startsWith('http')) {
-						console.log('这个时候路径是不对的，需要刷新页面');
-						location.reload(); // 刷新页面
-					} else {
-						console.log('路径正确:', window.location.href);
-					}
-				}
-			}, 100); // 100ms 延迟，确保 URL 变化已经生效
-		});
-		setInterval(() => {
-			if (window.location.href !== lastUrl) {
-				lastUrl = window.location.href;
-				let myWebsiteURL = new URL(window.location.href);
-				if (!myWebsiteURL.pathname.startsWith('http')) {
-					console.log('这个时候路径是不对的，需要刷新页面');
-					location.reload(); // 刷新页面
-				} else {
-					console.log('路径正确:', window.location.href);
-				}
-				console.log('URL changed to', lastUrl);
-			} else {
-				console.log('URL not changed:', window.location.href);
-			}
-		}, 300); // 每300毫秒检查一次
 		const observer = new MutationObserver((mutationsList) => {
 			mutationsList.forEach((mutation) => {
 				if (mutation.type === 'childList') {
@@ -144,6 +114,7 @@ export function interceptHistory(baseURL, prefix) {
 	const originalReplaceState = history.replaceState;
 
 	history.pushState = function (state, title, url) {
+		const urlStr = typeof url === 'string' ? url : url.toString();
 		if (!url.startsWith(prefix) && url.startsWith('http')) {
 			url = prefix + url;
 		} else if (!url.startsWith('http')) {
@@ -175,33 +146,5 @@ export function replaceWindowLocation(node) {
 	if (node.innerHTML.includes('window.location')) {
 		node.innerHTML = node.innerHTML.replace(/window\.location/g, 'window.proxyLocation');
 		console.log('Replaced window.location with window.proxyLocation');
-	}
-}
-
-export function replaceLinks(node, baseUrl, prefix) {
-	if (node.nodeType === Node.ELEMENT_NODE) {
-		const attributesToReplace = ['href', 'src', 'action'];
-		attributesToReplace.forEach((attr) => {
-			if (node.hasAttribute(attr)) {
-				let attrValue = node.getAttribute(attr);
-				let originalValue = attrValue; // 记录原始值
-
-				// 如果已经以 prefix 开头，则不操作
-				if (attrValue.startsWith(prefix)) {
-					console.log(`${attr}="${originalValue}" already starts with prefix, no changes.`);
-				} else if (!attrValue.startsWith('http') && !attrValue.startsWith('#') && !attrValue.includes(':')) {
-					//如果没有最后一个条件，会触发'src was "blob:https://dev.paperai.life/b7570176-bcd1-48bd-acf5-7e7d0ee632ee", now set to "https://dev.paperai.life/https://www.youtube.comblob:https://dev.paperai.life/b7570176-bcd1-48bd-acf5-7e7d0ee632ee"'导致service worker无法代理，进一步导致无法播放视频,但是原始代码的网页中没找代理blob的信息
-					// 处理相对路径的情况
-					let newValue = `${baseUrl}${attrValue}`;
-					node.setAttribute(attr, newValue);
-					console.log(`${attr} was "${originalValue}", now set to "${newValue}"`);
-				} else if (attrValue.startsWith('http')) {
-					// 处理绝对路径的情况
-					let newValue = `${prefix}${attrValue}`;
-					node.setAttribute(attr, newValue);
-					console.log(`${attr} was "${originalValue}", now set to "${newValue}"`);
-				}
-			}
-		});
 	}
 }

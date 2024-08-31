@@ -55,12 +55,12 @@ self.addEventListener('fetch', (event) => {
 
 							const redirectUrl = new URL(reconstructedUrl);
 							const redirectResponse = Response.redirect(redirectUrl, 308);
-							console.log(
-								'请求的路径不包含完整的 URL,同时它是以我的网站的域名开头,已修改:',
-								redirectUrl.href,
-								'原始请求URL:',
-								webRequestUrlObject.href
-							);
+							// console.log(
+							// 	'请求的路径不包含完整的 URL,同时它是以我的网站的域名开头,已修改:',
+							// 	redirectUrl.href,
+							// 	'原始请求URL:',
+							// 	webRequestUrlObject.href
+							// );
 							return redirectResponse;
 						} else {
 							console.log(`No last requested domain available. webRequestUrlObject: ${webRequestUrlObject.href}`);
@@ -83,10 +83,10 @@ self.addEventListener('fetch', (event) => {
 					// 检查响应的 Content-Type 是否为 text/html
 					if (response.headers.get('Content-Type')?.includes('text/html')) {
 						const text = await clonedResponse.text(); // 读取克隆的响应体
-						if (text.length > 1500) {
+						// if (text.length > 1500) {
 							// 检查内容长度,因为我发现有些text页面它是没有内容的,所以这些请求需要忽略
 							await getUrlOriginPutCache(webRequestUrlObject);
-						}
+						// }
 					}
 					return response;
 				}

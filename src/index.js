@@ -1,7 +1,7 @@
 // 网站的作用是通过我的网站域名加上需要代理的网址的完整链接，使得这个网址的流量全部经过我的网站给后端请求进行代理然后再返回给前端
 // todo 去掉Origin 和 Referer
 import { handleEvent } from './route.js';
-import { initProxy, replaceWindowLocation, replaceLinks, interceptHistory } from './client.js';
+import { initProxy, replaceWindowLocation, interceptHistory } from './client.js';
 addEventListener('fetch', (event) => {
 	event.respondWith(handle(event));
 });
@@ -96,16 +96,15 @@ async function handle(event) {
 		modifiedResponse.headers.delete('Permissions-Policy');
 		modifiedResponse.headers.set('X-Frame-Options', 'ALLOWALL');
 		modifiedResponse.headers.set('Access-Control-Allow-Origin', '*');
-		modifiedResponse.headers.set('X-Frame-Options', 'ALLOWALL');
-		modifiedResponse.headers.delete('Strict-Transport-Security'); // 强制使用 HTTPS
-		modifiedResponse.headers.delete('X-Download-Options'); // 防止 IE 下载危险文件
-		modifiedResponse.headers.delete('X-Content-Type-Options'); // 防止 MIME 类型嗅探
-		modifiedResponse.headers.delete('Referrer-Policy'); // 控制引用头部的发送
-		modifiedResponse.headers.delete('Feature-Policy'); // 控制特定功能使用的权限
+		// modifiedResponse.headers.delete('Strict-Transport-Security'); // 强制使用 HTTPS
+		// modifiedResponse.headers.delete('X-Download-Options'); // 防止 IE 下载危险文件
+		// modifiedResponse.headers.delete('X-Content-Type-Options'); // 防止 MIME 类型嗅探
+		// modifiedResponse.headers.delete('Referrer-Policy'); // 控制引用头部的发送
+		// modifiedResponse.headers.delete('Feature-Policy'); // 控制特定功能使用的权限
 		return modifiedResponse;
 	} catch (e) {
 		let pathname = new URL(event.request.url).pathname;
-		return new Response(`"${pathname}" not found`, {
+		return new Response(`"${pathname}" not found, error:${e}`, {
 			status: 404,
 			statusText: 'not found',
 		});
@@ -141,70 +140,28 @@ async function updateRelativeUrls(response, baseUrl, prefix) {
 	// 在 <head> 中插入 Service Worker 注册代码 //type="module"
 	const swRegistrationScript = `
         <script>
-            if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
                     console.log('Service Worker registered with scope:', registration.scope);
                 }).catch(function(error) {
                     console.log('Service Worker registration failed:', error);
                 });
-            }
 			// 设置 Cookie 为当前用户所在网站的域名
-//           	const fullPath = location.pathname.replace('/', ''); // 获取路径部分并移除开头的 '/'
-// 			const actualUrl = new URL(fullPath); // 使用路径创建一个新的 URL 对象
-// 			const origin = actualUrl.origin; // 提取 origin 部分
-// 			if (origin){
-// 			document.cookie = "current_site=" + encodeURIComponent(origin) + "; Path=/; Secure";
-// }
-		// import { replaceWindowLocation, replaceLinks } from '/utils.js'; //从根目录加载，但是utils重名了
-        // ${
-					initProxy.toString() + replaceWindowLocation.toString() + replaceLinks.toString() + interceptHistory.toString()
-				}//这里脚本之后改成使用cdn加载
-		// initProxy(); // 这里调用 initProxy 函数
+          	const fullPath = location.pathname.replace('/', ''); // 获取路径部分并移除开头的 '/'
+			const actualUrl = new URL(fullPath); // 使用路径创建一个新的 URL 对象
+			const origin = actualUrl.origin; // 提取 origin 部分
+			if (origin){document.cookie = "current_site=" + encodeURIComponent(origin) + "; Path=/; Secure";}
+			${initProxy.toString() + replaceWindowLocation.toString() + interceptHistory.toString()}//这里脚本之后改成使用cdn加载
+			initProxy(); // 这里调用 initProxy 函数
         </script>
     `;
+	// import { replaceWindowLocation, replaceLinks } from '/utils.js'; //从根目录加载，但是utils重名了
 
-	// 将 Service Worker 注册代码插入到 <head> 标签之前
 	text = text.replace('</head>', `${swRegistrationScript}</head>`);
 	const analyticsScript = `
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-N5PKF1XT49"></script>
 <script>
-// 设置 Cookie 为当前用户所在网站的域名
-          	const fullPath = location.pathname.replace('/', ''); // 获取路径部分并移除开头的 '/'
-			const actualUrl = new URL(fullPath); // 使用路径创建一个新的 URL 对象
-			const origin = actualUrl.origin; // 提取 origin 部分
-			if (origin){
-			document.cookie = "current_site=" + encodeURIComponent(origin) + "; Path=/; Secure";
-}
-		const cookie = document.cookie;
 
-const cookieObj = Object.fromEntries(
-			cookie.split(';').map((cookie) => {
-				const [key, ...val] = cookie.trim().split('=');
-				return [key.trim(), val.join('=').trim()];
-			})
-		);
-
-		if (cookieObj.current_site) {
-			currentSite = decodeURIComponent(cookieObj.current_site);
-			if (currentSite.includes("youtube")) {
-			// 对url监测
-			let lastUrl = window.location.href;
-				setInterval(() => {
-			if (window.location.href.slice(-5) !== lastUrl.slice(-5)) {
-				lastUrl = window.location.href;
-				let myWebsiteURL = new URL(window.location.href);
-				if (!myWebsiteURL.pathname.startsWith('http')) {
-					console.log('这个时候路径是不对的，需要刷新页面');
-					location.reload(); // 刷新页面
-				} else {
-					console.log('路径正确:', window.location.href);
-				}
-				console.log('URL changed to', lastUrl);
-			} else {
-				console.log('URL not changed:', window.location.href);
-			}
-		}, 300); // 每300毫秒检查一次
-}}</script>
+</script>
 		<script>
 			window.dataLayer = window.dataLayer || [];
 			function gtag() {
