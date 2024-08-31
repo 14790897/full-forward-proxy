@@ -1,6 +1,6 @@
 # full-forward-proxy
 
-本项目尽全力将网页上的内容全部通过 CF Worker 进行代理, 油管，pornhub 可用
+本项目尽全力将网页上的内容全部通过 CF Worker 进行代理
 
 ## 使用方法
 

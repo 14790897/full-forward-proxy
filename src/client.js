@@ -39,7 +39,7 @@ export function initProxy() {
 						lastUrl = window.location.href;
 						let myWebsiteURL = new URL(window.location.href);
 						//这个脚本的运行位置是在我的网站下，因为这里已经是我的网站所以不需要检查域名是不是我的网站的路径，然后由于油管网站他会修改路径却不发起网络请求，所以我没办法在service worker拦截，只能在这里进行刷新页面，使得能发起请求，但根路径的话会和我的首页进行冲，突所以我觉得额外加上一个前缀确实有一些帮助
-						if (!myWebsiteURL.pathname.startsWith('/http') && !myWebsiteURL.pathname.startsWith('/')) {
+						if (!myWebsiteURL.pathname.startsWith('/http') || !myWebsiteURL.pathname.startsWith('/')) {
 							//因为YouTube首页根目录路径是'/',为了使得能够正常访问，所以这里需要加上'/'
 							console.log('这个时候路径是不对的，需要刷新页面');
 							console.log('URL changed to', lastUrl);
