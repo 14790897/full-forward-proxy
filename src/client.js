@@ -25,12 +25,12 @@ export function initProxy() {
 				return [key.trim(), val.join('=').trim()];
 			})
 		);
-
 		if (cookieObj.current_site) {
 			currentSite = decodeURIComponent(cookieObj.current_site);
 			prefix = location.origin + '/'; // 处理绝对路径情况, 前面需要有 /
 			baseURL = prefix + currentSite; // 处理相对路径的情况, 相对路径本身开头就有 / 所以不需要加
 			console.log('currentSite in client.js:', currentSite);
+			// youtube检测路径的修改
 			if (currentSite.includes('youtube')) {
 				// 对url监测
 				let lastUrl = window.location.href;
@@ -38,13 +38,15 @@ export function initProxy() {
 					if (window.location.href.slice(-5) !== lastUrl.slice(-5)) {
 						lastUrl = window.location.href;
 						let myWebsiteURL = new URL(window.location.href);
-						if (!myWebsiteURL.pathname.startsWith('http')) {
+						//这个脚本的运行位置是在我的网站下，因为这里已经是我的网站所以不需要检查域名是不是我的网站的路径，然后由于油管网站他会修改路径却不发起网络请求，所以我没办法在service worker拦截，只能在这里进行刷新页面，使得能发起请求，但根路径的话会和我的首页进行冲，突所以我觉得额外加上一个前缀确实有一些帮助
+						if (!myWebsiteURL.pathname.startsWith('/http') && !myWebsiteURL.pathname.startsWith('/')) {
+							//因为YouTube首页根目录路径是'/',为了使得能够正常访问，所以这里需要加上'/'
 							console.log('这个时候路径是不对的，需要刷新页面');
+							console.log('URL changed to', lastUrl);
 							location.reload(); // 刷新页面
 						} else {
 							console.log('路径正确:', window.location.href);
 						}
-						console.log('URL changed to', lastUrl);
 					} else {
 						console.log('URL not changed:', window.location.href);
 					}
@@ -104,9 +106,9 @@ export function initProxy() {
 			set(target, prop, value) {
 				if (prop === 'href') {
 					let newValue = value;
-					if (!value.startsWith(prefix) && value.startsWith('http')) {
+					if (!value.startsWith(prefix) && value.startsWith('http')) {//这个设置的是完整域名
 						newValue = prefix + value;
-					} else if (!value.startsWith('http')) {
+					} else if (!value.startsWith('http')) { //这个设置的是相对路径，有/
 						//相对路径这里一般是以/开头
 						newValue = baseURL + value;
 					}

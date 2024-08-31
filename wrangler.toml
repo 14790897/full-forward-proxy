@@ -1,5 +1,5 @@
 #:schema node_modules/wrangler/config-schema.json
-name = "full-forward-proxy-dev"
+name = "full-forward-proxy-tomorrow"
 main = "src/index.js"
 compatibility_date = "2024-08-15"
 compatibility_flags = ["nodejs_compat"]

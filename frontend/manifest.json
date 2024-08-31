@@ -1,12 +1,12 @@
 {
-	"short_name": "Next Full Proxy",
-	"name": "全代理网页流量，轻松越过防火墙",
+	"short_name": "Full Proxy",
+	"name": "freedom",
 	"start_url": "/",
 	"display": "standalone",
 	"display_override": ["window-controls-overlay", "minimal-ui", "standalone"],
 	"theme_color": "#ffffff",
 	"background_color": "#ffffff",
-	"description": "自由就在眼前",
+	"description": "全代理网页流量，轻松越过防火墙，自由就在眼前",
 	"screenshots": [
 		{
 			"src": "/android-chrome-512x512.png",
