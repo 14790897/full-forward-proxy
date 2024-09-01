@@ -1,7 +1,12 @@
 import { Hono } from 'hono';
-import { handleEvent } from './route.js';
+import type { StatusCode } from 'hono/utils/http-status';
+import { getAssetFromKV } from '@cloudflare/kv-asset-handler';
+interface Env {
+	MY_KV_NAMESPACE: KVNamespace;
+	EVENT: FetchEvent;
+}
+const app = new Hono<{ Bindings: Env }>();
 
-const app = new Hono();
 const excludedPaths = [
 	'/',
 	'/service-worker.js',
@@ -16,88 +21,118 @@ const excludedPaths = [
 	'site.webmanifest',
 ];
 
+// 处理排除的路径
 excludedPaths.forEach((path) => {
 	app.get(path, async (c) => {
-		return handleEvent(c.event);
+		try {
+			// 使用 getAssetFromKV 处理静态资源请求
+			const response = await getAssetFromKV({
+				request: c.req.raw,
+				waitUntil: (promise: Promise<unknown>) => {
+					// 这里你可以处理 promise
+					promise.then(() => console.log('Promise resolved')).catch((err) => console.error('Promise rejected', err));
+				},
+			});
+			return response;
+		} catch (e) {
+			// 如果找不到文件，返回 404
+			return c.text(`404 - Not Found:${e}`, 404);
+		}
 	});
 });
 
 app.all('*', async (c) => {
-	const request = c.req;
-	const url = new URL(request.url);
-	const prefix = `${url.origin}/`;
+	try {
+		const request = c.req; // 使用 Hono 的请求对象
+		const url = new URL(request.url);
+		const prefix = `${url.origin}/`;
 
-	let actualUrlStr;
+		let actualUrlStr;
 
-	if (!url.pathname.startsWith('/http')) {
-		const cookie = request.header('Cookie');
-		if (cookie) {
-			const cookieObj = Object.fromEntries(
-				cookie.split(';').map((cookie) => {
-					const [key, ...val] = cookie.trim().split('=');
-					return [key.trim(), val.join('=').trim()];
-				})
-			);
-			if (cookieObj.current_site) {
-				actualUrlStr = `${decodeURIComponent(cookieObj.current_site)}${url.pathname}${url.search}${url.hash}`;
-				console.log('actualUrlStr in cookieObj:', actualUrlStr);
-				const actualUrl = new URL(actualUrlStr);
-				const redirectUrl = `${prefix}${actualUrl}`;
-				return c.redirect(redirectUrl, 301);
+		if (!url.pathname.startsWith('/http')) {
+			// 处理非代理请求，通过 Cookie 中的记录获取实际网址
+			const cookie = request.header('Cookie');
+			if (cookie) {
+				const cookieObj = Object.fromEntries(
+					cookie.split(';').map((cookie) => {
+						const [key, ...val] = cookie.trim().split('=');
+						return [key.trim(), val.join('=').trim()];
+					})
+				);
+				if (cookieObj.current_site) {
+					actualUrlStr = `${decodeURIComponent(cookieObj.current_site)}${url.pathname}${url.search}${url.hash}`;
+					console.log('actualUrlStr in cookieObj:', actualUrlStr);
+					const actualUrl = new URL(actualUrlStr);
+					const redirectUrl = `${prefix}${actualUrl}`;
+					return c.redirect(redirectUrl, 301);
+				} else {
+					return c.text('No website in cookie. Please visit a website first.', 400);
+				}
 			} else {
-				return c.text(`No website in cookie. Please visit a website first.`, 400);
+				return c.text('No cookie found. Please visit a website first.', 400);
 			}
 		} else {
-			return c.text(`No cookie found. Please visit a website first.`, 400);
+			// 处理代理请求
+			actualUrlStr = url.pathname.replace('/', '') + url.search + url.hash;
 		}
-	} else {
-		actualUrlStr = url.pathname.replace('/', '') + url.search + url.hash;
+
+		const actualUrl = new URL(actualUrlStr);
+		const actualOrigin = actualUrl.origin;
+
+		// 克隆并修改请求头
+		const newHeaders = new Headers(request.raw.headers);
+		newHeaders.set('Referer', actualOrigin);
+		newHeaders.set('Origin', actualOrigin);
+
+		// 克隆请求并进行修改
+		const modifiedRequest = new Request(actualUrl, {
+			headers: newHeaders,
+			method: request.method,
+			body: request.method !== 'GET' && request.raw.body ? request.raw.body : null, // 只有非 GET 请求才包含 body
+			redirect: 'follow',
+		});
+
+		// 发送请求并处理响应
+		let response = await fetch(modifiedRequest);
+		const baseUrl = `${prefix}${actualOrigin}`;
+
+		// 如果是 HTML 内容，更新相对路径
+		if (response.headers.get('Content-Type')?.includes('text/html')) {
+			response = await updateRelativeUrls(response, baseUrl, prefix);
+		}
+
+		// 克隆并修改响应头
+		const modifiedResponse = new Response(response.body, {
+			status: response.status,
+			statusText: response.statusText,
+			headers: filterResponseHeaders(response.headers),
+		});
+		// 将 Headers 转换为普通对象
+		const headersObject = Object.fromEntries(modifiedResponse.headers.entries());
+		return c.body(modifiedResponse.body, modifiedResponse.status as StatusCode, headersObject);
+	} catch (error) {
+		console.error('Error processing request:', error);
+		return c.text('Internal Server Error', 500);
 	}
-
-	const actualUrl = new URL(actualUrlStr);
-	const actualOrigin = actualUrl.origin;
-
-	const newHeaders = new Headers(request.raw.headers);
-	newHeaders.set('Referer', actualOrigin);
-	newHeaders.set('Origin', actualOrigin);
-
-	const modifiedRequest = new Request(actualUrl, {
-		headers: newHeaders,
-		method: request.method,
-		body: request.clone().body,
-		redirect: 'follow',
-	});
-
-	let response = await fetch(modifiedRequest);
-	const baseUrl = `${prefix}${actualOrigin}`;
-
-	if (response.headers.get('Content-Type')?.includes('text/html')) {
-		response = await updateRelativeUrls(response, baseUrl, prefix);
-	}
-
-	const responseBody = await response.text();
-	const modifiedResponse = new Response(responseBody, {
-		status: response.status,
-		statusText: response.statusText,
-		headers: response.headers,
-	});
-
-	modifiedResponse.headers.delete('Content-Security-Policy');
-	modifiedResponse.headers.delete('X-Content-Security-Policy');
-	modifiedResponse.headers.delete('X-WebKit-CSP');
-	modifiedResponse.headers.delete('Permissions-Policy');
-	modifiedResponse.headers.set('X-Frame-Options', 'ALLOWALL');
-	modifiedResponse.headers.set('Access-Control-Allow-Origin', '*');
-	modifiedResponse.headers.delete('Strict-Transport-Security');
-	modifiedResponse.headers.delete('X-Download-Options');
-	modifiedResponse.headers.delete('X-Content-Type-Options');
-	modifiedResponse.headers.delete('Feature-Policy');
-
-	return c.body(responseBody, 200, {
-		headers: modifiedResponse.headers,
-	});
 });
 
+// 过滤并修改响应头
+function filterResponseHeaders(headers) {
+	const newHeaders = new Headers(headers);
+	newHeaders.delete('Content-Security-Policy');
+	newHeaders.delete('X-Content-Security-Policy');
+	newHeaders.delete('X-WebKit-CSP');
+	newHeaders.delete('Permissions-Policy');
+	newHeaders.set('X-Frame-Options', 'ALLOWALL');
+	newHeaders.set('Access-Control-Allow-Origin', '*');
+	newHeaders.delete('Strict-Transport-Security');
+	newHeaders.delete('X-Download-Options');
+	newHeaders.delete('X-Content-Type-Options');
+	newHeaders.delete('Feature-Policy');
+	return newHeaders;
+}
+
+// 更新 HTML 中的相对路径
 async function updateRelativeUrls(response, baseUrl, prefix) {
 	let text = await response.text();
 
@@ -120,7 +155,7 @@ async function updateRelativeUrls(response, baseUrl, prefix) {
             navigator.serviceWorker.addEventListener('message', (event) => {
                 const currentSite = event.data.currentSite;
                 if (currentSite) {
-                    document.cookie = "current_site="+ currentSite + "; path=/; Secure";
+                    document.cookie = "current_site=" + currentSite + "; path=/; Secure";
                     console.log('current_site saved to cookie in index:', currentSite);
                 }
             });

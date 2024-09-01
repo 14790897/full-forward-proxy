@@ -12,6 +12,7 @@
 	"devDependencies": {
 		"@cloudflare/kv-asset-handler": "^0.3.4",
 		"@cloudflare/vitest-pool-workers": "^0.4.5",
+		"@cloudflare/workers-types": "^4.20240821.1",
 		"vitest": "1.5.0",
 		"wrangler": "^3.73.0"
 	},
