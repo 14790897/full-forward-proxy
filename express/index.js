@@ -164,7 +164,7 @@ function filterResponseHeaders(headers) {
 }
 
 // 监听端口
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8686;
 app.listen(PORT, () => {
 	console.log(`Server is running on port ${PORT}`);
 });
