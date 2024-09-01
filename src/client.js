@@ -30,7 +30,7 @@ export function initProxy() {
 			prefix = location.origin + '/'; // 处理绝对路径情况, 前面需要有 /
 			baseURL = prefix + currentSite; // 处理相对路径的情况, 相对路径本身开头就有 / 所以不需要加
 			console.log('currentSite in client.js:', currentSite);
-			
+
 		} else {
 			// throw new Error('No current_site in cookie');
 			console.error('No current_site in cookie');
@@ -44,12 +44,12 @@ export function initProxy() {
 						if (node.nodeType === 1) {
 							// 1 表示元素节点
 							replaceWindowLocation(node);
-							// replaceLinks(node, baseURL, prefix); // 添加链接替换的调用
+							replaceLinks(node, baseURL, prefix); // 添加链接替换的调用
 						}
 					});
 				} else if (mutation.type === 'attributes') {
 					replaceWindowLocation(mutation.target);
-					// replaceLinks(mutation.target, baseURL, prefix); // 添加链接替换的调用
+					replaceLinks(mutation.target, baseURL, prefix); // 添加链接替换的调用
 				}
 			});
 		});
@@ -150,5 +150,25 @@ export function replaceWindowLocation(node) {
 	if (node.innerHTML.includes('window.location')) {
 		node.innerHTML = node.innerHTML.replace(/window\.location/g, 'window.proxyLocation');
 		console.log('Replaced window.location with window.proxyLocation');
+	}
+}
+export function replaceLinks(node, baseUrl, prefix) {
+	if (node.nodeType === Node.ELEMENT_NODE) {
+		const attributesToReplace = ['href', 'src', 'action'];
+		attributesToReplace.forEach((attr) => {
+			if (node.hasAttribute(attr)) {
+				let attrValue = node.getAttribute(attr);
+				// 如果已经以prefix开头，则不操作
+				if (attrValue.startsWith(prefix)) {
+					console.log(`${attr}="${attrValue}" already starts with prefix, no changes made.`);
+				} else if (!attrValue.includes('://') && !attrValue.startsWith('#')) {
+					node.setAttribute(attr, `${baseUrl}${attrValue}`);
+					console.log(`${attr}="${baseUrl}${attrValue}"`);
+				} else if (attrValue.includes('://')) {
+					node.setAttribute(attr, `${prefix}${attrValue}`);
+					console.log(`${attr}="${prefix}${attrValue}"`);
+				}
+			}
+		});
 	}
 }

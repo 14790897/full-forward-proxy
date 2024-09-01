@@ -1,7 +1,7 @@
 // 网站的作用是通过我的网站域名加上需要代理的网址的完整链接，使得这个网址的流量全部经过我的网站给后端请求进行代理然后再返回给前端
 // todo 去掉Origin 和 Referer
 import { handleEvent } from './route.js';
-import { initProxy, replaceWindowLocation, interceptHistory } from './client.js';
+import { initProxy, replaceWindowLocation, interceptHistory, replaceLinks } from './client.js';
 addEventListener('fetch', (event) => {
 	event.respondWith(handle(event));
 });
@@ -158,12 +158,14 @@ async function updateRelativeUrls(response, baseUrl, prefix) {
             document.cookie = "current_site="+ currentSite + "; path=/; Secure"//注意这里不需要再次编码，sw已经编码过了
             console.log('current_site saved to cookie in index:', currentSite)
         }
-    });
-	</script>
-    `;
-	// ${initProxy.toString() + replaceWindowLocation.toString() + interceptHistory.toString()}//这里脚本之后改成使用cdn加载
-	// initProxy(); // 这里调用 initProxy 函数
-	// import { replaceWindowLocation, replaceLinks } from '/utils.js'; //从根目录加载，但是utils重名了
+		});
+		</script>
+		`;
+		// ${
+		// 	initProxy.toString() + replaceWindowLocation.toString() + interceptHistory.toString() + replaceLinks.toString()
+		// }//这里脚本之后改成使用cdn加载
+		// initProxy(); // 这里调用 initProxy 函数
+		// import { replaceWindowLocation, replaceLinks } from '/utils.js'; //从根目录加载，但是utils重名了
 
 	text = text.replace('</head>', `${swRegistrationScript}</head>`);
 	const analyticsScript = `
