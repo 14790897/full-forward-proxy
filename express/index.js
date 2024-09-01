@@ -1,7 +1,17 @@
-const express = require('express');
-const cookieParser = require('cookie-parser');
-const path = require('path');
-const fetch = require('node-fetch'); // Node.js 环境下使用 fetch 需要安装 node-fetch
+import express from 'express';
+import cookieParser from 'cookie-parser';
+import path from 'path';
+import fetch from 'node-fetch';
+import { fileURLToPath } from 'url';
+import https from 'https';
+
+// 创建一个忽略自签名证书的 HTTPS Agent
+const httpsAgent = new https.Agent({
+	rejectUnauthorized: false,
+});
+// __dirname and __filename are not available in ES modules, so you need to recreate them
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const app = express();
 
 // 使用中间件解析 Cookie
@@ -24,15 +34,14 @@ const excludedPaths = [
 	'/site.webmanifest',
 ];
 
-// 处理排除的路径（模拟原始 service worker 逻辑）
-app.get(excludedPaths, (req, res) => {
-	res.sendFile(path.join(__dirname, req.path)); // 返回请求的文件
-});
+
+app.use(express.static(path.join(__dirname, '..', 'frontend')));
 
 // 处理所有其他请求
 app.all('*', async (req, res) => {
 	try {
 		const webRequestUrlObject = new URL(req.url, `http://${req.headers.host}`);
+
 		const prefix = `${webRequestUrlObject.origin}/`;
 
 		let actualUrlStr;
@@ -45,7 +54,7 @@ app.all('*', async (req, res) => {
 				console.log('actualUrlStr in cookie:', actualUrlStr);
 				const actualUrl = new URL(actualUrlStr);
 				const redirectUrl = `${prefix}${actualUrl}`;
-				res.redirect(301, redirectUrl);
+				res.redirect(302, redirectUrl);
 				return;
 			} else {
 				res.status(400).send(`No website in cookie. Please visit a website first.`);
@@ -70,6 +79,7 @@ app.all('*', async (req, res) => {
 			headers: newHeaders,
 			body: req.method !== 'GET' ? req.body : undefined,
 			redirect: 'follow',
+			agent: httpsAgent, // 添加 httpsAgent 来忽略自签名证书错误
 		});
 
 		let responseBody = await response.text();

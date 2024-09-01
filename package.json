@@ -17,6 +17,9 @@
 		"wrangler": "^3.73.0"
 	},
 	"dependencies": {
-		"hono": "^4.5.10"
+		"cookie-parser": "^1.4.6",
+		"express": "^4.19.2",
+		"hono": "^4.5.10",
+		"node-fetch": "^3.3.2"
 	}
 }
