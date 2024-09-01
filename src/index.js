@@ -75,10 +75,10 @@ async function handle(event) {
 		const actualUrlObject = new URL(actualUrlStr);
 		console.log('actualUrlStr:', actualUrlStr);
 		const actualOrigin = actualUrlObject.origin;
-		// 克隆请求并移除 Origin 和 Referer 头
+		// 克隆请求并修改 Origin 和 Referer 头
 		const newHeaders = new Headers(request.headers);
-		// newHeaders.delete('Origin');
-		// newHeaders.delete('Referer');
+		newHeaders.set('Referer', actualOrigin);
+		newHeaders.set('Origin', actualOrigin);
 		//设置请求头的refer和origin为current_site cookie的值
 		const modifiedRequest = new Request(actualUrlObject, {
 			headers: newHeaders,
