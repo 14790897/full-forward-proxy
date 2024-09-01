@@ -77,7 +77,7 @@ async function handle(event) {
 		const actualOrigin = actualUrlObject.origin;
 		// 克隆请求并修改 Origin 和 Referer 头
 		const newHeaders = new Headers(request.headers);
-		newHeaders.set('Referer', actualOrigin);
+		newHeaders.set('Referer', actualOrigin); // Todo: 可以判断原始referer格式增加路径信息
 		newHeaders.set('Origin', actualOrigin);
 		//设置请求头的refer和origin为current_site cookie的值
 		const modifiedRequest = new Request(actualUrlObject, {

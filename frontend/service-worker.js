@@ -81,11 +81,7 @@ self.addEventListener('fetch', (event) => {
 					// 捕获其他之前未处理的请求
 					// console.log('未修改,链接已经符合代理格式：', webRequestUrlObject.href);
 					const response = await fetch(event.request);
-					// let clonedResponse = response.clone();
 					if (response.headers.get('Content-Type')?.includes('text/html')) {
-						// const text = await clonedResponse.text(); // 读取克隆的响应体
-						// if (text.length > 1500) {
-							// 检查内容长度,因为我发现有些text页面它是没有内容的,所以这些请求需要忽略
 						// await getUrlOriginPutCache(webRequestUrlObject);
 							await cacheActiveClientUrl();
 						// }
