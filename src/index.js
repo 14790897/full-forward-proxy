@@ -77,8 +77,9 @@ async function handle(event) {
 		const actualOrigin = actualUrlObject.origin;
 		// 克隆请求并移除 Origin 和 Referer 头
 		const newHeaders = new Headers(request.headers);
-		newHeaders.delete('Origin');
-		newHeaders.delete('Referer');
+		// newHeaders.delete('Origin');
+		// newHeaders.delete('Referer');
+		//设置请求头的refer和origin为current_site cookie的值
 		const modifiedRequest = new Request(actualUrlObject, {
 			headers: newHeaders,
 			method: request.method,
@@ -103,7 +104,7 @@ async function handle(event) {
 		modifiedResponse.headers.delete('Strict-Transport-Security'); // 强制使用 HTTPS
 		modifiedResponse.headers.delete('X-Download-Options'); // 防止 IE 下载危险文件
 		modifiedResponse.headers.delete('X-Content-Type-Options'); // 防止 MIME 类型嗅探
-		modifiedResponse.headers.delete('Referrer-Policy'); // 控制引用头部的发送
+		// modifiedResponse.headers.delete('Referrer-Policy'); // 控制引用头部的发送
 		modifiedResponse.headers.delete('Feature-Policy'); // 控制特定功能使用的权限
 		return modifiedResponse;
 	} catch (e) {
@@ -178,6 +179,11 @@ async function updateRelativeUrls(response, baseUrl, prefix) {
 			gtag('js', new Date());
 
 			gtag('config', 'G-N5PKF1XT49');
+			(function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "nt4hmun44h");
 		</script>
 	`;
 	text = text.replace('</body>', `${analyticsScript}</body>`);
