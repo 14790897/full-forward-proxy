@@ -16,4 +16,4 @@ https://github.com/EtherDream/jsproxy
 
 ## 思考： "/https://google.com/gen_204", error:TypeError: A request with a one-time-use body (it was initialized from a stream, not a buffer) encountered a redirect requiring the body to be retransmitted. To avoid this error in the future, construct this request from a buffer-like body initializer.
 
-在发出一个带有“流”作为请求体的 HTTP 请求时，遇到了一个重定向（redirect）响应。由于 HTTP 重定向要求重新发送请求，而请求体是流式的，不能重复读取，导致了这个错误，这就说明在进行流式请求的时候不能进行重定向，需要对此进行区分
+在发出一个带有“流”作为请求体的 HTTP 请求时，遇到了一个重定向（redirect）响应。由于 HTTP 重定向要求重新发送请求，而请求体是流式的，不能重复读取，导致了这个错误，这就说明在进行流式请求的时候不能进行重定向，需要对此进行区分，这个是我的499错误触发的
