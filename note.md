@@ -13,10 +13,10 @@ https://github.com/EtherDream/jsproxy
 
 
 
+## IP有问题会影响到wrangler的部署
 
 
-
-
+## 思考：	sw可以在响应头中添加 CORS 支持, 怀疑有些网页上自己的请求它可能会发出CORS预检，而这里没有代理，但其实是错误的因为SW仍然可以直接拦截cors请求，给到后端修改
 
 
 

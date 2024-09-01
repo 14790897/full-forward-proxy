@@ -1,8 +1,8 @@
 'use strict';
-
 // frontend/service-worker.js
 // 网站的作用是通过我的网站域名加上需要代理的网址的完整链接，使得这个网址的流量全部经过我的网站给后端请求进行代理然后再返回给前端
 // sw可以拦截所有来自本域名的请求，sw不能读取cookie：https://stackoverflow.com/questions/59087642/reading-request-headers-inside-a-service-worker
+// todo redirect可能导致会导致请求内容被消耗，需要修改
 self.addEventListener('install', (event) => {
 	console.log('Service Worker installing...');
 	self.skipWaiting();
@@ -83,7 +83,7 @@ self.addEventListener('fetch', (event) => {
 					const response = await fetch(event.request);
 					if (response.headers.get('Content-Type')?.includes('text/html')) {
 						// await getUrlOriginPutCache(webRequestUrlObject);
-							await cacheActiveClientUrl();
+						await cacheActiveClientUrl();
 						// }
 					}
 					return response;
