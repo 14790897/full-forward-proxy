@@ -4,11 +4,14 @@ import path from 'path';
 import fetch from 'node-fetch';
 import { fileURLToPath } from 'url';
 import https from 'https';
+import http from 'http';
 
 // 创建一个忽略自签名证书的 HTTPS Agent
 const httpsAgent = new https.Agent({
 	rejectUnauthorized: false,
 });
+// 创建支持 HTTP 协议的 Agent
+const httpAgent = new http.Agent();
 // __dirname and __filename are not available in ES modules, so you need to recreate them
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,29 +21,12 @@ const app = express();
 app.use(cookieParser());
 app.use(express.json()); // 解析 JSON 请求体
 app.use(express.urlencoded({ extended: true })); // 解析 URL 编码请求体
-
-// 定义需要排除的路径
-const excludedPaths = [
-	'/',
-	'/service-worker.js',
-	'/favicon.ico',
-	'/util.js',
-	'/android-chrome-192x192.png',
-	'/android-chrome-512x512.png',
-	'/apple-touch-icon.png',
-	'/favicon-16x16.png',
-	'/favicon-32x32.png',
-	'/manifest.json',
-	'/site.webmanifest',
-];
-
-
 app.use(express.static(path.join(__dirname, '..', 'frontend')));
 
 // 处理所有其他请求
 app.all('*', async (req, res) => {
 	try {
-		const webRequestUrlObject = new URL(req.url, `http://${req.headers.host}`);
+		const webRequestUrlObject = new URL(req.url, `${req.protocol}://${req.headers.host}`);
 
 		const prefix = `${webRequestUrlObject.origin}/`;
 
@@ -63,23 +49,20 @@ app.all('*', async (req, res) => {
 		} else {
 			actualUrlStr = webRequestUrlObject.pathname.replace('/', '') + webRequestUrlObject.search + webRequestUrlObject.hash;
 		}
-
 		const actualUrlObject = new URL(actualUrlStr);
 		console.log('actualUrlStr:', actualUrlStr);
 		const actualOrigin = actualUrlObject.origin;
 
-		// 克隆请求并修改 Origin 和 Referer 头
 		const newHeaders = { ...req.headers };
 		newHeaders['Referer'] = actualOrigin;
 		newHeaders['Origin'] = actualOrigin;
-
-		// 请求目标 URL
+		const agent = actualUrlObject.protocol === 'https:' ? httpsAgent : httpAgent;
 		const response = await fetch(actualUrlObject.href, {
 			method: req.method,
 			headers: newHeaders,
 			body: req.method !== 'GET' ? req.body : undefined,
 			redirect: 'follow',
-			agent: httpsAgent, // 添加 httpsAgent 来忽略自签名证书错误
+			agent,
 		});
 
 		let responseBody = await response.text();
@@ -99,7 +82,7 @@ app.all('*', async (req, res) => {
 		res.status(response.status).send(responseBody);
 	} catch (e) {
 		console.error('Error processing request:', e);
-		res.status(500).send(`Internal Server Error: ${e}`);
+		res.status(499).send(`Internal Server Error: ${e}`);
 	}
 });
 
