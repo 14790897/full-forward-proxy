@@ -120,9 +120,9 @@ async function handlePostRequest(event, urlObject) {
 	};
 
 	// 如果请求体是 ReadableStream，添加 duplex 选项
-	if (event.request.body instanceof ReadableStream) {
+	// if (event.request.body instanceof ReadableStream) {
 		requestInit.duplex = 'half';
-	}
+	// }
 
 	const modifiedRequest = new Request(urlObject, requestInit);
 	return fetch(modifiedRequest);
