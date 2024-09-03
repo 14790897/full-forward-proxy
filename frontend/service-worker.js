@@ -95,7 +95,7 @@ async function handleExternalRequest(event, webRequestUrlObject, prefix) {
 }
 async function handleRequest(event, modifiedUrlObject) {
 	// if (event.request.method === 'GET') {
-		return handleGetRequest(modifiedUrlObject);
+	return handleGetRequest(modifiedUrlObject);
 	// } else {
 	// 	return handlePostRequest(event, modifiedUrlObject);
 	// }
