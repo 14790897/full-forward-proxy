@@ -1,30 +1,28 @@
+// 网站的作用是通过我的网站域名加上需要代理的网址的完整链接，使得这个网址的流量全部经过我的网站给后端请求进行代理然后再返回给前端，如当用户访问 http://localhost:3000/https://google.com 时，自动代理到 https://google.com 网站
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import path from 'path';
-import fetch from 'node-fetch';
 import { fileURLToPath } from 'url';
-import https from 'https';
-import http from 'http';
-
-// 创建一个忽略自签名证书的 HTTPS Agent
-const httpsAgent = new https.Agent({
-	rejectUnauthorized: false,
-});
-// 创建支持 HTTP 协议的 Agent
-const httpAgent = new http.Agent();
+import { createProxyMiddleware } from 'http-proxy-middleware';
 // __dirname and __filename are not available in ES modules, so you need to recreate them
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
-
+import compression from 'compression';
+app.use(compression());
 // 使用中间件解析 Cookie
 app.use(cookieParser());
 app.use(express.json()); // 解析 JSON 请求体
 app.use(express.urlencoded({ extended: true })); // 解析 URL 编码请求体
-app.use(express.static(path.join(__dirname, '..', 'frontend')));
+app.use(
+	express.static(path.join(__dirname, '..', 'frontend'), {
+		maxAge: '1d', // 静态文件缓存 1 天,
+		lastModified: true, // 启用 Last-Modified
+	})
+);
 
 // 处理所有其他请求
-app.all('*', async (req, res) => {
+app.all('*', (req, res, next) => {
 	try {
 		const webRequestUrlObject = new URL(req.url, `${req.protocol}://${req.headers.host}`);
 
@@ -50,39 +48,60 @@ app.all('*', async (req, res) => {
 			actualUrlStr = webRequestUrlObject.pathname.replace('/', '') + webRequestUrlObject.search + webRequestUrlObject.hash;
 		}
 		const actualUrlObject = new URL(actualUrlStr);
-		console.log('actualUrlStr:', actualUrlStr);
 		const actualOrigin = actualUrlObject.origin;
 
-		const newHeaders = { ...req.headers };
-		newHeaders['Referer'] = actualOrigin;
-		newHeaders['Origin'] = actualOrigin;
-		const agent = actualUrlObject.protocol === 'https:' ? httpsAgent : httpAgent;
-		const response = await fetch(actualUrlObject.href, {
-			method: req.method,
-			headers: newHeaders,
-			body: req.method !== 'GET' ? req.body : undefined,
-			redirect: 'follow',
-			agent,
-		});
+		const baseUrl = `${prefix}${actualOrigin}`; //前缀加上真实域名
 
-		let responseBody = await response.text();
+		console.log('actualUrlStr:', actualUrlStr);
+		createProxyMiddleware({
+			target: actualOrigin,
+			changeOrigin: true,
+			selfHandleResponse: true,
+			pathRewrite: (path) => {
+				console.log(`Rewriting path for target: ${actualOrigin}`);
+				// 确保只有当路径中确实包含 target 的时候才进行替换
+				return path.startsWith(`/${actualOrigin}`) ? path.replace(`/${actualOrigin}`, '') : path;
+			},
+			onProxyRes: (proxyRes, req, res) => {
+				const contentType = proxyRes.headers['content-type'] || '';
 
-		// 更新 HTML 中的相对路径
-		if (response.headers.get('content-type')?.includes('text/html')) {
-			responseBody = updateRelativeUrls(responseBody, prefix, actualOrigin);
-		}
+				// 过滤并设置响应头
+				const filteredHeaders = filterResponseHeaders(proxyRes.headers);
+				res.set(filteredHeaders);
+				proxyRes.on('error', (err) => {
+					console.error('Error in proxy response:', err);
+					res.status(500).send('Error processing proxy response');
+				});
+				// HTML 内容: 手动读取并处理响应体
+				if (contentType.includes('text/html')) {
+					let body = '';
+					proxyRes.on('data', (chunk) => {
+						body += chunk;
+						console.log(`增加内容：${chunk}`);
+					});
 
-		// 克隆并修改响应头
-		const modifiedHeaders = filterResponseHeaders(response.headers);
+					proxyRes.on('end', () => {
+						const updatedBody = updateRelativeUrls(body, baseUrl, prefix);
+						console.log(`Received response from target: ${updatedBody}`);
 
-		// 删除 CSP 相关的响应头
-		res.set(modifiedHeaders);
+						// 返回更新后的 HTML 内容
+						res.set('Content-Type', 'text/html');
+						res.send(updatedBody); // 发送响应
+					});
+				} else {
+					// 非 HTML 内容: 直接使用 pipe() 传输
+					proxyRes.pipe(res);
 
-		// 发送响应
-		res.status(response.status).send(responseBody);
+					// 捕获流结束事件
+					proxyRes.on('end', () => {
+						res.end(); // 确保响应结束
+					});
+				}
+			},
+		})(req, res, next);
 	} catch (e) {
 		console.error('Error processing request:', e);
-		res.status(499).send(`Internal Server Error: ${e}`);
+		res.status(500).send(`Internal Server Error: ${e}`);
 	}
 });
 
@@ -100,49 +119,49 @@ function updateRelativeUrls(text, baseUrl, prefix) {
 		.replace(
 			'</head>',
 			`
-        <script>
-            navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
-                console.log('Service Worker registered with scope:', registration.scope);
-            }).catch(function(error) {
-                console.log('Service Worker registration failed:', error);
-            });
-            navigator.serviceWorker.addEventListener('message', (event) => {
-                const currentSite = event.data.currentSite;
-                if (currentSite) {
-                    document.cookie = "current_site=" + currentSite + "; path=/; Secure";
-                    console.log('current_site saved to cookie in index:', currentSite);
-                }
-            });
-        </script>
-        </head>
-    `
+	    <script>
+	        navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
+	            console.log('Service Worker registered with scope:', registration.scope);
+	        }).catch(function(error) {
+	            console.log('Service Worker registration failed:', error);
+	        });
+	        navigator.serviceWorker.addEventListener('message', (event) => {
+	            const currentSite = event.data.currentSite;
+	            if (currentSite) {
+	                document.cookie = "current_site=" + currentSite + "; path=/; Secure";
+	                console.log('current_site saved to cookie in index:', currentSite);
+	            }
+	        });
+	    </script>
+	    </head>
+	`
 		)
 		.replace(
 			'</body>',
 			`
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-N5PKF1XT49"></script>
-        <script>
-            window.dataLayer = window.dataLayer || [];
-            function gtag() {
-                dataLayer.push(arguments);
-            }
-            gtag('js', new Date());
-            gtag('config', 'G-N5PKF1XT49');
-            (function(c,l,a,r,i,t,y){
-                c[a]=c[a]||function(){(c[a].q=c[a.q||[]).push(arguments)};
-                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-            })(window, document, "clarity", "script", "nt4hmun44h");
-        </script>
-        </body>
-    `
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-N5PKF1XT49"></script>
+	<script>
+	    window.dataLayer = window.dataLayer || [];
+	    function gtag() {
+	        dataLayer.push(arguments);
+	    }
+	    gtag('js', new Date());
+	    gtag('config', 'G-N5PKF1XT49');
+	    (function(c,l,a,r,i,t,y){
+	        c[a]=c[a]||function(){(c[a].q=c[a.q||[]).push(arguments)};
+	        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+	        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+	    })(window, document, "clarity", "script", "nt4hmun44h");
+	</script>
+	</body>
+	`
 		);
 }
 
 // 过滤并修改响应头
 function filterResponseHeaders(headers) {
 	const newHeaders = {};
-	headers.forEach((value, key) => {
+	Object.entries(headers).forEach(([key, value]) => {
 		if (
 			![
 				'Content-Security-Policy',

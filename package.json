@@ -4,6 +4,7 @@
 	"version": "0.0.1",
 	"private": false,
 	"scripts": {
+		"express": "nodemon express/index.js",
 		"deploy": "wrangler deploy",
 		"dev": "wrangler dev",
 		"start": "wrangler dev",
@@ -13,13 +14,16 @@
 		"@cloudflare/kv-asset-handler": "^0.3.4",
 		"@cloudflare/vitest-pool-workers": "^0.4.5",
 		"@cloudflare/workers-types": "^4.20240821.1",
+		"nodemon": "^3.1.4",
 		"vitest": "1.5.0",
 		"wrangler": "^3.73.0"
 	},
 	"dependencies": {
+		"compression": "^1.7.4",
 		"cookie-parser": "^1.4.6",
 		"express": "^4.19.2",
 		"hono": "^4.5.10",
+		"http-proxy-middleware": "^3.0.2",
 		"node-fetch": "^3.3.2"
 	}
 }
