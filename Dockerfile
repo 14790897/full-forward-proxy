@@ -6,6 +6,7 @@ WORKDIR /app
 
 # 复制 package.json 和 package-lock.json
 COPY package*.json ./
+RUN npm install -g wrangler
 
 # 安装依赖项
 RUN npm install
