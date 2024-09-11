@@ -3,7 +3,8 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createProxyMiddleware } from 'http-proxy-middleware';
+import proxy from 'express-http-proxy'; // 引入 express-http-proxy
+
 // __dirname and __filename are not available in ES modules, so you need to recreate them
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -53,55 +54,39 @@ app.all('*', (req, res, next) => {
 		const baseUrl = `${prefix}${actualOrigin}`; //前缀加上真实域名
 
 		console.log('actualUrlStr:', actualUrlStr);
-		createProxyMiddleware({
-			target: actualOrigin,
-			changeOrigin: true,
-			selfHandleResponse: true,
-			pathRewrite: (path) => {
-				console.log(`Rewriting path for target: ${actualOrigin}`);
-				// 确保只有当路径中确实包含 target 的时候才进行替换
+		const proxyMiddleware = proxy(actualOrigin, {
+			proxyReqPathResolver: (req) => {
+				const path = req.url;
 				return path.startsWith(`/${actualOrigin}`) ? path.replace(`/${actualOrigin}`, '') : path;
 			},
-			onProxyRes: (proxyRes, req, res) => {
+			userResDecorator: async (proxyRes, proxyResData, req, res) => {
 				const contentType = proxyRes.headers['content-type'] || '';
+				res.removeHeader('Content-Security-Policy');
+				res.removeHeader('X-Content-Security-Policy');
+				res.removeHeader('X-WebKit-CSP');
+				res.removeHeader('Permissions-Policy');
+				res.removeHeader('Strict-Transport-Security');
+				res.removeHeader('X-Download-Options');
+				res.removeHeader('X-Content-Type-Options');
+				res.removeHeader('Feature-Policy');
 
-				// 过滤并设置响应头
-				const filteredHeaders = filterResponseHeaders(proxyRes.headers);
-				res.set(filteredHeaders);
-				proxyRes.on('error', (err) => {
-					console.error('Error in proxy response:', err);
-					res.status(500).send('Error processing proxy response');
-				});
-				// HTML 内容: 手动读取并处理响应体
+				res.setHeader('X-Frame-Options', 'ALLOWALL');
+				res.setHeader('Access-Control-Allow-Origin', '*');
+
 				if (contentType.includes('text/html')) {
-					let body = '';
-					proxyRes.on('data', (chunk) => {
-						body += chunk;
-						console.log(`增加内容：${chunk}`);
-					});
-
-					proxyRes.on('end', () => {
-						const updatedBody = updateRelativeUrls(body, baseUrl, prefix);
-						console.log(`Received response from target: ${updatedBody}`);
-
-						// 返回更新后的 HTML 内容
-						res.set('Content-Type', 'text/html');
-						res.send(updatedBody); // 发送响应
-					});
+					let responseBody = proxyResData.toString('utf8');
+					const updatedBody = updateRelativeUrls(responseBody, baseUrl, prefix); // 更新 HTML 中的相对 URL
+					return updatedBody;
 				} else {
-					// 非 HTML 内容: 直接使用 pipe() 传输
-					proxyRes.pipe(res);
-
-					// 捕获流结束事件
-					proxyRes.on('end', () => {
-						res.end(); // 确保响应结束
-					});
+					return proxyResData; // 其他类型的响应保持不变
 				}
 			},
-		})(req, res, next);
+		});
+
+		proxyMiddleware(req, res, next); // 继续代理请求
 	} catch (e) {
 		console.error('Error processing request:', e);
-		res.status(500).send(`Internal Server Error: ${e}`);
+		res.status(499).send(`Internal Server Error: ${e}`);
 	}
 });
 
@@ -156,30 +141,6 @@ function updateRelativeUrls(text, baseUrl, prefix) {
 	</body>
 	`
 		);
-}
-
-// 过滤并修改响应头
-function filterResponseHeaders(headers) {
-	const newHeaders = {};
-	Object.entries(headers).forEach(([key, value]) => {
-		if (
-			![
-				'Content-Security-Policy',
-				'X-Content-Security-Policy',
-				'X-WebKit-CSP',
-				'Permissions-Policy',
-				'Strict-Transport-Security',
-				'X-Download-Options',
-				'X-Content-Type-Options',
-				'Feature-Policy',
-			].includes(key)
-		) {
-			newHeaders[key] = value;
-		}
-	});
-	newHeaders['X-Frame-Options'] = 'ALLOWALL';
-	newHeaders['Access-Control-Allow-Origin'] = '*';
-	return newHeaders;
 }
 
 // 监听端口
