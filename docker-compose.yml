@@ -1,5 +1,5 @@
 services:
-  paperai:
+  full-forward-proxy:
     image: 14790897/full-forward-proxy:latest
     container_name: full-forward-proxy
     ports:
