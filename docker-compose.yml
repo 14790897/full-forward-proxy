@@ -1,0 +1,7 @@
+services:
+  paperai:
+    image: 14790897/full-forward-proxy:latest
+    container_name: full-forward-proxy
+    ports:
+      - '8787:8787'
+    restart: unless-stopped # 容器退出时重启策略

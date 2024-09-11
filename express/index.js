@@ -19,6 +19,7 @@ app.use(
 	express.static(path.join(__dirname, '..', 'frontend'), {
 		maxAge: '1d', // 静态文件缓存 1 天,
 		lastModified: true, // 启用 Last-Modified
+		etag: true, // 使用 ETag 标识资源是否更新
 	})
 );
 
@@ -59,8 +60,19 @@ app.all('*', (req, res, next) => {
 				const path = req.url;
 				return path.startsWith(`/${actualOrigin}`) ? path.replace(`/${actualOrigin}`, '') : path;
 			},
+			proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
+				proxyReqOpts.headers['Host'] = new URL(actualOrigin).host;
+				return proxyReqOpts;
+			},
 			userResDecorator: async (proxyRes, proxyResData, req, res) => {
 				const contentType = proxyRes.headers['content-type'] || '';
+				if (proxyRes.headers['location']) {
+					// 删除 'Location' 头，防止重定向
+					delete proxyRes.headers['location'];
+					res.statusCode = 200;
+				}
+
+				res.removeHeader('Location');
 				res.removeHeader('Content-Security-Policy');
 				res.removeHeader('X-Content-Security-Policy');
 				res.removeHeader('X-WebKit-CSP');
@@ -124,20 +136,21 @@ function updateRelativeUrls(text, baseUrl, prefix) {
 		.replace(
 			'</body>',
 			`
-	<script async src="https://www.googletagmanager.com/gtag/js?id=G-N5PKF1XT49"></script>
-	<script>
-	    window.dataLayer = window.dataLayer || [];
-	    function gtag() {
-	        dataLayer.push(arguments);
-	    }
-	    gtag('js', new Date());
-	    gtag('config', 'G-N5PKF1XT49');
-	    (function(c,l,a,r,i,t,y){
-	        c[a]=c[a]||function(){(c[a].q=c[a.q||[]).push(arguments)};
-	        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-	        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-	    })(window, document, "clarity", "script", "nt4hmun44h");
-	</script>
+				<script async src="https://www.googletagmanager.com/gtag/js?id=G-N5PKF1XT49"></script>
+		<script>
+			window.dataLayer = window.dataLayer || [];
+			function gtag() {
+				dataLayer.push(arguments);
+			}
+			gtag('js', new Date());
+
+			gtag('config', 'G-N5PKF1XT49');
+			(function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "nt4hmun44h");
+		</script>
 	</body>
 	`
 		);
