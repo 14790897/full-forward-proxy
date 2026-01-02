@@ -34,7 +34,7 @@ https://tomorrow.paperai.life
 
 ## 演示视频
 
-https://www.youtube.com/watch?v=cJs7C6rQheA
+https://www.youtube.com/watch?v=cJs7C6rQheA(youtube账号被封了，视频没了，仅记录)
 <!-- ## 参考项目
 
 https://github.com/gaboolic/cloudflare-reverse-proxy -->
